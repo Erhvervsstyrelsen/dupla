@@ -124,3 +124,10 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Secrets for test script
+agreements*.yml
+scripts/.env*
+
+# VS code stuff
+.vscode

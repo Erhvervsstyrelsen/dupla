@@ -19,6 +19,9 @@ classifiers = [
 dependencies = [
   "requests",
   "requests_pkcs12",
+  "python-dotenv",
+  "pyyaml",
+  "backoff",
 ]
 
 [project.optional-dependencies]
@@ -26,3 +29,17 @@ test = [
   "pytest",
   "pytest-mock",
 ]
+dev = [
+  "pytest",
+  "pytest-mock",
+  "black"
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.ruff]
+line-length = 100
+exclude = ["__init__.py",
+           "scripts"]
