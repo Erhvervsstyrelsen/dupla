@@ -80,7 +80,7 @@ The base api can be used as following:
 from uuid import uuid4
 from datetime import date, timedelta
 
-from dupla import DuplaApiBase
+from dupla.base import DuplaApiBase
 
 api = DuplaApiBase(
     transaction_id=str(uuid4()),
