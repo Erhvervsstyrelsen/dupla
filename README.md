@@ -10,7 +10,7 @@ For development
 
 `source .venv/bin/activate`
 
-`pip install -r dev-requirements.txt`
+`pip install ".[test]"`
 
 Run tests:
 `pytest tests/`
