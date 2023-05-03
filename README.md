@@ -3,7 +3,7 @@ A Python API for [DUPLA](https://dataudveksling.skat.dk/) (Dataudvekslingsplatfo
 
 A list of the services available can be found [here](https://dataudveksling.skat.dk/#/servicekatalog)
 
-## SETUP
+## Setup
 
 For development
 `python -m venv .venv`
@@ -15,17 +15,76 @@ For development
 Run tests:
 `pytest tests/`
 
-## GETTING STARTED
+## Getting Started
 
+### Using pre-defined API endpoints
+
+This package defines some endpoints which has some (limited) knowledge
+of the API schema used by SKAT. The classes are:
+
+* `dupla.DuplaKtrApi`
+* `dupla.DuplaLigApi`
+* `dupla.DuplaMomsApi`
+* `dupla.DuplaKtrObsApi`
+* `dupla.DuplaLonsumApi`
+* `dupla.DuplaSelskabSambeskatningApi`
+* `dupla.DuplaSelskabSelvangivelseApi`
+
+Please c.f. the docs of the respective classes for more information
+on what each endpoint is for. An example using the VAT (Moms in Danish) endpoint:
+
+```python
+from uuid import uuid4
+from datetime import date
+from dupla import DuplaMomsApi, DuplaApiKeys
+
+# Get the default VAT endpoint from the skat api
+endpoint = DuplaMomsApi.endpoint_from_base_url("https://api.skat.dk")
+
+api = DuplaMomsApi(
+    endpoint=endpoint,
+    transaction_id=str(uuid4()),
+    agreement_id="your-aftale-id-goes-here",
+    pkcs12_filename="path-to-cert-file",
+    pkcs12_password="goodpassword",
+    billetautomat_url="https://oces.billetautomat.skat.dk/auth/realms/oces/certificates/cert",
+    jwt_token_expiration_overlap=5
+)
+
+# datetime objects are automatically converted
+# into the correct string representation
+kwargs = {
+    DuplaApiKeys.SE=["9876543210"],
+    DuplaApiKeys.UDSTILLING_FRA=date.today() - timedelta(days=365),
+    DuplaApiKeys.UDSTILLING_TIL=date.today()
+}
+payload = api.get_payload(**kwargs)
+data = api.get_data(payload)
+
+print(data)
 ```
+
+The fields which can be provided is given by the `api.FIELDS` dictionary,
+which is a key-value set of the API key as well as whether the key is required
+by the SKAT api. Should a key you wish to provide be missing, a consistency check of
+unknown keys can be disabled by setting `api.allow_unknown_fields = True`.
+
+#### Testing your API
+A description of how to test your API can be found [here](./scripts/README.md).
+
+### Using the base API
+
+The base api can be used as following:
+
+```python
 from uuid import uuid4
 from datetime import date, timedelta
 
 from dupla import DuplaApiBase
 
 api = DuplaApiBase(
-    transaktions_id=str(uuid4()),
-    aftale_id="your-aftale-id-goes-here",
+    transaction_id=str(uuid4()),
+    agreement_id="your-aftale-id-goes-here",
     pkcs12_filename="path-to-cert-file",
     pkcs12_password="goodpassword",
     billetautomat_url="https://oces.billetautomat.skat.dk/auth/realms/oces/certificates/cert",

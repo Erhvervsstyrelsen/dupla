@@ -1,0 +1,8 @@
+-r requirements.txt
+-r scripts/requirements.txt
+-e .
+setuptools
+build
+pytest
+pytest-mock
+black
