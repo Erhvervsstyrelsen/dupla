@@ -1,5 +1,7 @@
 import uuid
 
+import dupla
+import dupla.version
 from dupla.base import DuplaApiBase
 
 
@@ -41,3 +43,10 @@ def test_token_not_refreshed_if_not_expired(mocked_requests_long_expiration_time
     authentication_spy.assert_called_once()
     mock_session_post.assert_called_once()
     assert mock_session_request.call_count == 2
+
+
+def test_version_import():
+    assert hasattr(dupla, "__version__")
+    assert isinstance(dupla.__version__, str)
+    assert dupla.__version__ == dupla.version.__version__
+    assert dupla.__version__ == str(dupla.version.version_obj)

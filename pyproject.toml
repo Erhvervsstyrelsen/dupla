@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dupla"
-version = "0.0.1"
 authors = [
-  { name="Valentin Rosenberg Larsen", email="valentin.rosenberg@gmail.com" },
+  {name="Valentin Rosenberg Larsen", email="valentin.rosenberg@gmail.com"},
+  {name="Alexander Tygesen", email="atygesen@hotmail.com"},
 ]
 description = "A python API for making requests to DUPLA (Dataudvekslingsplatformen)"
 readme = "README.md"
 requires-python = ">=3.8"
+license = {text = "Apache License 2.0"}
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
@@ -22,7 +23,12 @@ dependencies = [
   "python-dotenv",
   "pyyaml",
   "backoff",
+  "packaging",  # For version parsing
 ]
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {file = "dupla/_version.txt"}
 
 [project.optional-dependencies]
 test = [
@@ -32,7 +38,13 @@ test = [
 dev = [
   "pytest",
   "pytest-mock",
-  "black"
+  "black",
+  "ruff",
+  "pre-commit",
+  # For publishing
+  "build",
+  "twine",
+  "pyclean>=2.0.0",
 ]
 
 [tool.black]
