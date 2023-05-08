@@ -18,9 +18,10 @@ class DuplaKtrApi(DuplaEndpointApiBase):
 
     DEFAULT_ENDPOINT = "Kontrolregistreringer/Virksomhed"
     FIELDS: Dict[str, bool] = {
-        DuplaApiKeys.CVR: True,
-        DuplaApiKeys.TEKNISK_REGISTRERING_FRA: True,
-        DuplaApiKeys.TEKNISK_REGISTRERING_TIL: True,
+        DuplaApiKeys.CVR: False,
+        DuplaApiKeys.SE: False,
+        DuplaApiKeys.TEKNISK_REGISTRERING_FRA: False,
+        DuplaApiKeys.TEKNISK_REGISTRERING_TIL: False,
     }
 
 
