@@ -183,7 +183,7 @@ def test_run_payload_mock(api_factory, mock_run_payload):
 
 @pytest.mark.parametrize("api_factory", ALL_ENDPOINTS)
 @pytest.mark.parametrize("format_payload", [False, True])
-def test_run_payload_mock(api_factory, format_payload, mock_run_payload):
+def test_run_payload_mock_typecheck(api_factory, format_payload, mock_run_payload):
     api = build_dummy_api(api_factory)
 
     date_key = dp.DuplaApiKeys.TEKNISK_REGISTRERING_FRA

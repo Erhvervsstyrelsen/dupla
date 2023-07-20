@@ -3,6 +3,7 @@ import uuid
 import pytest
 import requests
 import requests_pkcs12
+
 from dupla.endpoint import DuplaEndpointApiBase
 
 

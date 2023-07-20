@@ -189,8 +189,8 @@ class DuplaEndpointApiBase(DuplaApiBase):
 
         Args:
             payload (dict): Payload, e.g. constructed from the `get_payload` method.
-            format_payload (bool, optional): Whether to call `build_payload` on the provided payload.
-                Otherwise the payload is provided as-is.
+            format_payload (bool, optional): Whether to call `build_payload` on the provided
+                payload. Otherwise the payload is provided as-is.
                 Defaults to True.
             validate_payload (bool, optional): Whether to validate the payload.
                 Defaults to True.
