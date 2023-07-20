@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+## 0.0.2
+### Added
 - Exceptions raised in `get_data` now provides `response`, so the raw
   response may be inspected.
 - Added the `format_payload` option to `get_data`.
