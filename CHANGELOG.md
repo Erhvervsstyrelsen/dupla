@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Incoming: class for interfacing with Kontrolregistreringer
-- Incoming: class for interfacing with Momsangivelser
-- Incoming: class for interfacing with Ligningssager
 
+### Added
+- Exceptions raised in `get_data` now provides `response`, so the raw
+  response may be inspected.
+- Added the `format_payload` option to `get_data`.
 ## 0.0.1
 
 ### Added

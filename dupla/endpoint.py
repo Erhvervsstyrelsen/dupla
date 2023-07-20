@@ -174,19 +174,30 @@ class DuplaEndpointApiBase(DuplaApiBase):
         return value
 
     def build_payload(self, **kwargs) -> Dict[str, Any]:
+        """Format the input values of the payload."""
         return {key: self.format_value(key, value) for key, value in kwargs.items()}
 
-    def get_data(self, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def get_data(
+        self,
+        payload: Dict[str, Any],
+        format_payload: bool = True,
+    ) -> List[Dict[str, Any]]:
         """Request the server for data.
 
         Args:
             payload (dict): Payload, e.g. constructed from the `get_payload` method.
+            format_payload (bool, optional): Whether to call `build_payload` on the provided payload.
+                Otherwise the payload is provided as-is.
+                Defaults to True.
 
         Returns:
             List[Dict[str, Any]]: A JSON list representing data as returned by the API.
         """
 
         endpoint = self.get_endpoint()
+
+        if format_payload:
+            payload = self.build_payload(**payload)
 
         # Construct the getter with a backoff, and a modified number of max tries
         @backoff.on_exception(
