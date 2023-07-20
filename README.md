@@ -53,13 +53,12 @@ api = DuplaMomsApi(
 
 # datetime objects are automatically converted
 # into the correct string representation
-kwargs = {
-    DuplaApiKeys.SE=["9876543210"],
+payload = {
+    DuplaApiKeys.SE=["98765432"],
     DuplaApiKeys.UDSTILLING_FRA=date.today() - timedelta(days=365),
     DuplaApiKeys.UDSTILLING_TIL=date.today()
 }
-payload = api.get_payload(**kwargs)
-data = api.get_data(payload)
+data = api.get_data(payload, format_payload=True, validate_payload=True)
 
 print(data)
 ```
