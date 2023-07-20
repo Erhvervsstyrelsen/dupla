@@ -1,6 +1,7 @@
 """This module defines the DUPLA API endpoint objects."""
 from typing import Dict
-from .endpoint import DuplaEndpointApiBase, DuplaApiKeys
+
+from .endpoint import DuplaApiKeys, DuplaEndpointApiBase
 
 __all__ = [
     "DuplaKtrApi",

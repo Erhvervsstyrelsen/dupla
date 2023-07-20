@@ -1,14 +1,14 @@
 import logging
-from datetime import date, datetime
-from typing import Any, List, Dict
-from urllib.parse import urljoin
 from dataclasses import dataclass, fields
+from datetime import date, datetime
+from typing import Any, Dict, List
+from urllib.parse import urljoin
 
-import requests
 import backoff
+import requests
 
 from .base import DuplaApiBase
-from .exceptions import InvalidPayloadException, DuplaResponseException, DuplaApiException
+from .exceptions import DuplaApiException, DuplaResponseException, InvalidPayloadException
 from .validation import convert_and_validate_iso_date
 
 logger = logging.getLogger(__file__)

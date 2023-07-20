@@ -1,5 +1,7 @@
-import pytest
 from datetime import date, datetime
+
+import pytest
+
 from dupla import validation
 
 # Constant dates, ensures they do not change during test
