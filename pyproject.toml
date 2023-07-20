@@ -38,8 +38,8 @@ test = [
 dev = [
   "pytest",
   "pytest-mock",
-  "black",
-  "ruff",
+  "black==23.7.0",
+  "ruff==0.0.278",
   "pre-commit",
   # For publishing
   "build",
@@ -57,3 +57,4 @@ exclude = ["__init__.py",
            "scripts"]
 target-version = "py38"
 extend-select = ["I", "RUF"]
+ignore = ["RUF012"]

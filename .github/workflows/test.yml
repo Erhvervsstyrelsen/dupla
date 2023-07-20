@@ -8,14 +8,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: chartboost/ruff-action@v1
+        with:
+            version: 0.0.278
 
   black:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: rickstaa/action-black@v1
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
         with:
-          black_args: ". --check"
+          options: "--check"
+          version: "~= 23.7"
 
   build:
     runs-on: ubuntu-latest
