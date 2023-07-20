@@ -15,6 +15,8 @@ logger = logging.getLogger(__file__)
 
 __all__ = ["DuplaEndpointApiBase", "DuplaApiKeys"]
 
+RESPONSE_T = Dict[str, Any]
+
 
 @dataclass
 class DuplaApiKeys:
@@ -174,17 +176,32 @@ class DuplaEndpointApiBase(DuplaApiBase):
         return value
 
     def build_payload(self, **kwargs) -> Dict[str, Any]:
+        """Format the input values of the payload."""
         return {key: self.format_value(key, value) for key, value in kwargs.items()}
 
-    def get_data(self, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def get_data(
+        self,
+        payload: Dict[str, Any],
+        format_payload: bool = True,
+    ) -> List[RESPONSE_T]:
         """Request the server for data.
 
         Args:
             payload (dict): Payload, e.g. constructed from the `get_payload` method.
+            format_payload (bool, optional): Whether to call `build_payload` on the provided payload.
+                Otherwise the payload is provided as-is.
+                Defaults to True.
 
         Returns:
             List[Dict[str, Any]]: A JSON list representing data as returned by the API.
         """
+
+        if format_payload:
+            payload = self.build_payload(**payload)
+        return self._run_payload(payload)
+
+    def _run_payload(self, payload: Dict[str, Any]) -> List[RESPONSE_T]:
+        """Execute a given payload. No conversion is done on the payload."""
 
         endpoint = self.get_endpoint()
 
@@ -213,7 +230,9 @@ class DuplaEndpointApiBase(DuplaApiBase):
                         response=response,
                     )
                 return data
-
+            except DuplaResponseException as e:
+                # Let the inner exception through
+                raise e
             except Exception as e:
                 logger.exception("Error occurred while processing response: %s", response.content)
                 raise DuplaResponseException(
