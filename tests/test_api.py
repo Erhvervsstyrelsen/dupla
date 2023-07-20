@@ -191,7 +191,7 @@ def test_run_payload_mock(api_factory, format_payload, mock_run_payload):
     payload[date_key] = datetime.now()
 
     assert mock_run_payload.call_count == 0
-    api.get_data(payload, format_payload=format_payload)
+    api.get_data(payload, format_payload=format_payload, validate_payload=False)
     assert mock_run_payload.call_count == 1
 
     args = mock_run_payload.call_args[0]
@@ -227,7 +227,7 @@ def test_date_conversion(api_factory, format_payload, expected_type, mock_run_pa
         payload[key] = datetime.now()
 
     assert mock_run_payload.call_count == 0
-    api.get_data(payload, format_payload=format_payload)
+    api.get_data(payload, format_payload=format_payload, validate_payload=False)
     assert mock_run_payload.call_count == 1
 
     args = mock_run_payload.call_args[0]

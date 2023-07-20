@@ -183,6 +183,7 @@ class DuplaEndpointApiBase(DuplaApiBase):
         self,
         payload: Dict[str, Any],
         format_payload: bool = True,
+        validate_payload: bool = True,
     ) -> List[RESPONSE_T]:
         """Request the server for data.
 
@@ -191,6 +192,8 @@ class DuplaEndpointApiBase(DuplaApiBase):
             format_payload (bool, optional): Whether to call `build_payload` on the provided payload.
                 Otherwise the payload is provided as-is.
                 Defaults to True.
+            validate_payload (bool, optional): Whether to validate the payload.
+                Defaults to True.
 
         Returns:
             List[Dict[str, Any]]: A JSON list representing data as returned by the API.
@@ -198,6 +201,8 @@ class DuplaEndpointApiBase(DuplaApiBase):
 
         if format_payload:
             payload = self.build_payload(**payload)
+        if validate_payload:
+            self.validate_payload(payload)
         return self._run_payload(payload)
 
     def _run_payload(self, payload: Dict[str, Any]) -> List[RESPONSE_T]:
