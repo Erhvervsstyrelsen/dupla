@@ -230,7 +230,9 @@ class DuplaEndpointApiBase(DuplaApiBase):
                         response=response,
                     )
                 return data
-
+            except DuplaResponseException as e:
+                # Let the inner exception through
+                raise e
             except Exception as e:
                 logger.exception("Error occurred while processing response: %s", response.content)
                 raise DuplaResponseException(
