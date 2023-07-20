@@ -8,7 +8,7 @@ import requests
 import backoff
 
 from .base import DuplaApiBase
-from .exceptions import InvalidPayloadException, DuplaApiException
+from .exceptions import InvalidPayloadException, DuplaResponseException, DuplaApiException
 from .validation import convert_and_validate_iso_date
 
 logger = logging.getLogger(__file__)
@@ -208,16 +208,17 @@ class DuplaEndpointApiBase(DuplaApiBase):
                     logger.exception(
                         "Received an invalid response from DUPLA, which was not a list: %s", data
                     )
-                    raise DuplaApiException(
-                        "Invalid response from DUPLA. The data key did not contain a list."
+                    raise DuplaResponseException(
+                        "Invalid response from DUPLA. The data key did not contain a list.",
+                        response=response,
                     )
                 return data
 
             except Exception as e:
-                logger.exception("Error occoured while processing response: %s", response.content)
-                raise DuplaApiException(
-                    "Invalid response from DUPLA. "
-                    "Response does not apply with OpenAPI specification."
+                logger.exception("Error occurred while processing response: %s", response.content)
+                raise DuplaResponseException(
+                    "An error occurred while parsing the DUPLA response.",
+                    response=response,
                 ) from e
 
         return _getter()
