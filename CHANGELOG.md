@@ -12,6 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.0.1
 
-### Added 
+### Added
 - Added a base class for interacting with DUPLA
 - Added functionality for json web token authentication

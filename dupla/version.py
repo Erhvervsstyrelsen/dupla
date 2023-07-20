@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from packaging.version import parse
 
 __all__ = ["__version__"]

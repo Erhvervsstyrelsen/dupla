@@ -1,5 +1,5 @@
+from datetime import date, datetime
 from typing import Union
-from datetime import datetime, date
 
 ISO_FMT = "%Y-%m-%d"  # Date format for fields requiring yyyy-mm-dd
 

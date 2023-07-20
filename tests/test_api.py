@@ -1,7 +1,9 @@
-from typing import Type
 import uuid
-from datetime import datetime, timedelta, date
+from datetime import date, datetime, timedelta
+from typing import Type
+
 import pytest
+
 import dupla as dp
 
 ALL_ENDPOINTS = (
