@@ -15,6 +15,8 @@ logger = logging.getLogger(__file__)
 
 __all__ = ["DuplaEndpointApiBase", "DuplaApiKeys"]
 
+RESPONSE_T = Dict[str, Any]
+
 
 @dataclass
 class DuplaApiKeys:
@@ -181,7 +183,7 @@ class DuplaEndpointApiBase(DuplaApiBase):
         self,
         payload: Dict[str, Any],
         format_payload: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[RESPONSE_T]:
         """Request the server for data.
 
         Args:
@@ -194,10 +196,14 @@ class DuplaEndpointApiBase(DuplaApiBase):
             List[Dict[str, Any]]: A JSON list representing data as returned by the API.
         """
 
-        endpoint = self.get_endpoint()
-
         if format_payload:
             payload = self.build_payload(**payload)
+        return self._run_payload(payload)
+
+    def _run_payload(self, payload: Dict[str, Any]) -> List[RESPONSE_T]:
+        """Execute a given payload. No conversion is done on the payload."""
+
+        endpoint = self.get_endpoint()
 
         # Construct the getter with a backoff, and a modified number of max tries
         @backoff.on_exception(

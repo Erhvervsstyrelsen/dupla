@@ -170,3 +170,68 @@ def test_validate_no_auth(api_factory, mocker):
     assert authentication_spy.call_count == 0
     api.get_payload(**payload_kwargs)
     assert authentication_spy.call_count == 0
+
+
+@pytest.mark.parametrize("api_factory", ALL_ENDPOINTS)
+def test_run_payload_mock(api_factory, mock_run_payload):
+    api = build_dummy_api(api_factory)
+
+    assert mock_run_payload.call_count == 0
+    api._run_payload({})
+    assert mock_run_payload.call_count == 1
+
+
+@pytest.mark.parametrize("api_factory", ALL_ENDPOINTS)
+@pytest.mark.parametrize("format_payload", [False, True])
+def test_run_payload_mock(api_factory, format_payload, mock_run_payload):
+    api = build_dummy_api(api_factory)
+
+    date_key = dp.DuplaApiKeys.TEKNISK_REGISTRERING_FRA
+    payload = build_dummy_payload(api)
+    payload[date_key] = datetime.now()
+
+    assert mock_run_payload.call_count == 0
+    api.get_data(payload, format_payload=format_payload)
+    assert mock_run_payload.call_count == 1
+
+    args = mock_run_payload.call_args[0]
+
+    call_payload = args[1]
+    if format_payload:
+        assert call_payload is not payload
+        assert isinstance(call_payload[date_key], str)
+    else:
+        assert call_payload is payload
+        assert isinstance(call_payload[date_key], datetime)
+
+    assert payload.get(dp.DuplaApiKeys.CVR, None) == call_payload.get(dp.DuplaApiKeys.CVR, None)
+
+
+@pytest.mark.parametrize("api_factory", ALL_ENDPOINTS)
+@pytest.mark.parametrize("format_payload, expected_type", [(False, datetime), (True, str)])
+def test_date_conversion(api_factory, format_payload, expected_type, mock_run_payload):
+    api = build_dummy_api(api_factory)
+
+    payload = {}
+    all_keys = [
+        dp.DuplaApiKeys.TEKNISK_REGISTRERING_FRA,
+        dp.DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
+        dp.DuplaApiKeys.AFREGNING_START,
+        dp.DuplaApiKeys.AFREGNING_SLUT,
+        dp.DuplaApiKeys.ANGIVELSE_GYLDIG_TIL,
+        dp.DuplaApiKeys.ANGIVELSE_GYLDIG_FRA,
+        dp.DuplaApiKeys.UDSTILLING_FRA,
+        dp.DuplaApiKeys.UDSTILLING_TIL,
+    ]
+    for key in all_keys:
+        payload[key] = datetime.now()
+
+    assert mock_run_payload.call_count == 0
+    api.get_data(payload, format_payload=format_payload)
+    assert mock_run_payload.call_count == 1
+
+    args = mock_run_payload.call_args[0]
+    call_payload = args[1]
+
+    for key in all_keys:
+        assert isinstance(call_payload[key], expected_type)
