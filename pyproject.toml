@@ -24,6 +24,7 @@ dependencies = [
   "pyyaml",
   "backoff",
   "packaging",  # For version parsing
+  "pydantic>=2.1",
 ]
 dynamic = ["version"]
 
