@@ -1,3 +1,0 @@
-python-dotenv
-pyyaml
-pydantic>=2.1
