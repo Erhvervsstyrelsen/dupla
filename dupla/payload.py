@@ -6,7 +6,7 @@ from pydantic import Field
 from .abstract_payload import BasePayload, UdstillingMixin
 from .custom_types import CPR_T, CVR_T, SE_T
 
-ENDP_T = ClassVar[str]
+ENDP_T = ClassVar[str]  # Endpoint type
 
 
 class KtrPayload(BasePayload):
