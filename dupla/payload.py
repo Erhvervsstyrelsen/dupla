@@ -1,7 +1,8 @@
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, TypeAlias
+from urllib.parse import urljoin
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from .endpoint import DuplaApiKeys
 from .timestamp import as_utc_str
@@ -10,9 +11,30 @@ CVR_T: TypeAlias = List[str]
 CPR_T: TypeAlias = List[str]
 SE_T: TypeAlias = List[str]
 
+ALIAS_DCT: Dict[str, str] = {
+    "default_endpoint": "default_endpoint",
+    "se": DuplaApiKeys.SE,
+    "cvr": DuplaApiKeys.CVR,
+    "cpr": DuplaApiKeys.CPR,
+    "registrering_fra": DuplaApiKeys.TEKNISK_REGISTRERING_FRA,
+    "registrering_til": DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
+    "afregning_start": DuplaApiKeys.AFREGNING_START,
+    "afregning_slut": DuplaApiKeys.AFREGNING_SLUT,
+    "sag_type_kode": DuplaApiKeys.SAG_TYPE_KODE,
+    "selvangivelse_aar": DuplaApiKeys.SELVANGIVESE_INDKOMST_AAR,
+    "angivelse_fra": DuplaApiKeys.ANGIVELSE_GYLDIG_FRA,
+    "angivelse_til": DuplaApiKeys.ANGIVELSE_GYLDIG_TIL,
+}
+
+
+def get_alias(name: str) -> str:
+    return ALIAS_DCT[name]
+
 
 class BasePayload(BaseModel):
     """Base Payload Pydantic model"""
+
+    model_config = ConfigDict(alias_generator=get_alias, populate_by_name=True, extra="forbid")
 
     default_endpoint: str = ""
 
@@ -26,8 +48,16 @@ class BasePayload(BaseModel):
             exclude_none=True,
         )
 
+    @classmethod
+    def endpoint_from_base_url(cls, url: str) -> str:
+        if not cls.default_endpoint:
+            raise ValueError(f"The API {cls.__name__} has not set the default endpoint.")
+        return urljoin(url, cls.default_endpoint)
+
 
 class UdstillingMixin(BaseModel):
+    model_config = ConfigDict(alias_generator=get_alias, populate_by_name=True, extra="forbid")
+
     udstilling_fra: Optional[datetime] = Field(
         default=None,
         serialization_alias=DuplaApiKeys.UDSTILLING_FRA,
@@ -50,16 +80,10 @@ class KtrPayload(BasePayload):
 
     default_endpoint: str = "Kontrolregistreringer/Virksomhed"
 
-    cvr: Optional[CVR_T] = Field(default=None, serialization_alias=DuplaApiKeys.CVR)
-    se: Optional[SE_T] = Field(default=None, serialization_alias=DuplaApiKeys.SE)
-    registrering_fra: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_FRA,
-    )
-    registrering_til: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
-    )
+    cvr: Optional[CVR_T] = Field(default=None)
+    se: Optional[SE_T] = Field(default=None)
+    registrering_fra: Optional[date] = Field(default=None)
+    registrering_til: Optional[date] = Field(default=None)
 
 
 class KtrObsPayload(BasePayload):
@@ -67,15 +91,9 @@ class KtrObsPayload(BasePayload):
 
     default_endpoint: str = "Kontrolobservationer"
 
-    cpr: CPR_T = Field(serialization_alias=DuplaApiKeys.CPR)
-    registrering_fra: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_FRA,
-    )
-    registrering_til: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
-    )
+    cpr: CPR_T = Field()
+    registrering_fra: Optional[date] = Field(default=None)
+    registrering_til: Optional[date] = Field(default=None)
 
 
 class LigPayload(BasePayload):
@@ -83,77 +101,48 @@ class LigPayload(BasePayload):
 
     default_endpoint: str = "Ligningssager"
 
-    cvr: Optional[CVR_T] = Field(default=None, serialization_alias=DuplaApiKeys.CVR)
-    se: Optional[SE_T] = Field(default=None, serialization_alias=DuplaApiKeys.SE)
-    cpr: Optional[CPR_T] = Field(default=None, serialization_alias=DuplaApiKeys.CPR)
+    cvr: Optional[CVR_T] = Field(default=None)
+    se: Optional[SE_T] = Field(default=None)
+    cpr: Optional[CPR_T] = Field(default=None)
 
-    sag_type_kode: Optional[str] = Field(
-        default=None, serialization_alias=DuplaApiKeys.SAG_TYPE_KODE
-    )
+    sag_type_kode: Optional[str] = Field(default=None)
 
-    registrering_fra: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_FRA,
-    )
-    registrering_til: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
-    )
+    registrering_fra: Optional[date] = Field(default=None)
+    registrering_til: Optional[date] = Field(default=None)
 
 
 class MomsPayload(BasePayload, UdstillingMixin):
     """An API client for Dataudstillingsplatformens (DUPLA) Momsangivelser API."""
 
     default_endpoint: str = "Momsangivelse"
-    se: List[str] = Field(serialization_alias=DuplaApiKeys.SE)
-    afregning_start: date = Field(serialization_alias=DuplaApiKeys.AFREGNING_START)
-    afregning_slut: date = Field(serialization_alias=DuplaApiKeys.AFREGNING_SLUT)
+    se: List[str] = Field()
+    afregning_start: date = Field()
+    afregning_slut: date = Field()
 
 
 class LonsumPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Lønsumsangivelser API."""
 
     default_endpoint: str = "Lønsumsangivelser"
-    se: List[str] = Field(serialization_alias=DuplaApiKeys.SE)
+    se: List[str] = Field()
 
-    registrering_fra: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_FRA,
-    )
-    registrering_til: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
-    )
+    registrering_fra: Optional[date] = Field(default=None)
+    registrering_til: Optional[date] = Field(default=None)
 
-    angivelse_fra: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.ANGIVELSE_GYLDIG_FRA,
-    )
-    angivelse_til: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.ANGIVELSE_GYLDIG_TIL,
-    )
+    angivelse_fra: Optional[date] = Field(default=None)
+    angivelse_til: Optional[date] = Field(default=None)
 
 
 class SelskabSambeskatningPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Selskabsambeskatningskreds API."""
 
     default_endpoint: str = "Selskabsskatteoplysninger/Selskabsambeskatningskreds"
-    cvr: Optional[CVR_T] = Field(default=None, serialization_alias=DuplaApiKeys.CVR)
-    se: Optional[SE_T] = Field(default=None, serialization_alias=DuplaApiKeys.SE)
+    cvr: Optional[CVR_T] = Field(default=None)
+    se: Optional[SE_T] = Field(default=None)
 
-    selvangivelse_aar: Optional[str] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.SELVANGIVESE_INDKOMST_AAR,
-    )
-    registrering_fra: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_FRA,
-    )
-    registrering_til: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
-    )
+    selvangivelse_aar: Optional[str] = Field(default=None)
+    registrering_fra: Optional[date] = Field(default=None)
+    registrering_til: Optional[date] = Field(default=None)
 
 
 class SelskabSelvangivelse(BasePayload):
@@ -161,18 +150,9 @@ class SelskabSelvangivelse(BasePayload):
 
     default_endpoint: str = "Selskabsskatteoplysninger/Selskabselvangivelse"
 
-    cvr: Optional[CVR_T] = Field(default=None, serialization_alias=DuplaApiKeys.CVR)
-    se: Optional[SE_T] = Field(default=None, serialization_alias=DuplaApiKeys.SE)
+    cvr: Optional[CVR_T] = Field(default=None)
+    se: Optional[SE_T] = Field(default=None)
 
-    selvangivelse_aar: Optional[str] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.SELVANGIVESE_INDKOMST_AAR,
-    )
-    registrering_fra: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_FRA,
-    )
-    registrering_til: Optional[date] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
-    )
+    selvangivelse_aar: Optional[str] = Field(default=None)
+    registrering_fra: Optional[date] = Field(default=None)
+    registrering_til: Optional[date] = Field(default=None)

@@ -35,10 +35,12 @@ version = {file = "dupla/_version.txt"}
 test = [
   "pytest",
   "pytest-mock",
+  "Faker",
 ]
 dev = [
   "pytest",
   "pytest-mock",
+  "Faker",
   "black==23.7.0",
   "ruff==0.0.278",
   "pre-commit",
