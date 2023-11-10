@@ -68,15 +68,12 @@ which is a key-value set of the API key as well as whether the key is required
 by the SKAT api. Should a key you wish to provide be missing, a consistency check of
 unknown keys can be disabled by setting `api.allow_unknown_fields = True`.
 
-#### Testing your API
-A description of how to test your API can be found [here](./scripts/README.md).
-
 ### Using the base API
 
 The base api can be used as following:
 
 ```python
-from datetime import date
+from datetime import date, timedelta
 from uuid import uuid4
 import dupla
 from dupla import DuplaApiKeys
@@ -90,10 +87,10 @@ api = dupla.DuplaAccess(
     jwt_token_expiration_overlap=5
 )
 
-# lets see if this company (se_number 9876543210) has done any VAT the last year
-kwargs = {DuplaApiKeys.SE: ["12345678"],
-          DuplaApiKeys.AFREGNING_START: "2010-12-31",
-          DuplaApiKeys.AFREGNING_SLUT: date.today().isoformat()}
+# lets see if this company (se_number 98765432) has done any VAT the last year
+kwargs = {DuplaApiKeys.SE: ["98765432"],
+          DuplaApiKeys.AFREGNING_START: date.today() - timedelta(days=365),
+          DuplaApiKeys.AFREGNING_SLUT: date.today()}
 payload = dupla.payload.MomsPayload(**kwargs)
 
 data = api.get_data(payload)
