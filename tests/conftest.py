@@ -4,7 +4,7 @@ import pytest
 import requests
 import requests_pkcs12
 
-from dupla.endpoint import DuplaEndpointApiBase
+from dupla.endpoint import DuplaAccess
 
 
 class Object:
@@ -66,7 +66,7 @@ def get_mocked_requests_for_expiration(mock_session_post, mock_session_request):
 
 @pytest.fixture(autouse=True)
 def mock_run_payload(mocker):
-    mock_runner = mocker.patch.object(DuplaEndpointApiBase, "_run_payload", autospec=True)
+    mock_runner = mocker.patch.object(DuplaAccess, "_run_payload", autospec=True)
     return mock_runner
 
 

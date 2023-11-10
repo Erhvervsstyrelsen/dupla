@@ -1,15 +1,18 @@
+import abc
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional, TypeAlias
+from typing import Any, ClassVar, Dict, List, Optional, TypeAlias
 from urllib.parse import urljoin
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from .endpoint import DuplaApiKeys
+from .api_keys import DuplaApiKeys
 from .timestamp import as_utc_str
 
 CVR_T: TypeAlias = List[str]
 CPR_T: TypeAlias = List[str]
 SE_T: TypeAlias = List[str]
+
+ENDP_T = ClassVar[str]
 
 ALIAS_DCT: Dict[str, str] = {
     "default_endpoint": "default_endpoint",
@@ -31,12 +34,16 @@ def get_alias(name: str) -> str:
     return ALIAS_DCT[name]
 
 
-class BasePayload(BaseModel):
+class BasePayload(BaseModel, abc.ABC):
     """Base Payload Pydantic model"""
 
     model_config = ConfigDict(alias_generator=get_alias, populate_by_name=True, extra="forbid")
 
-    default_endpoint: str = ""
+    @property
+    @abc.abstractmethod
+    def default_endpoint(self) -> str:
+        """The default endpoint for the payload"""
+        # Solution from: https://github.com/pydantic/pydantic/discussions/2410#discussioncomment-408613
 
     def get_payload(self) -> Dict[str, Any]:
         """Get the payload in a json-able format.
@@ -49,10 +56,10 @@ class BasePayload(BaseModel):
         )
 
     @classmethod
-    def endpoint_from_base_url(cls, url: str) -> str:
+    def endpoint_from_base_url(cls, base_url: str) -> str:
         if not cls.default_endpoint:
             raise ValueError(f"The API {cls.__name__} has not set the default endpoint.")
-        return urljoin(url, cls.default_endpoint)
+        return urljoin(base_url, cls.default_endpoint)
 
 
 class UdstillingMixin(BaseModel):
@@ -78,7 +85,7 @@ class UdstillingMixin(BaseModel):
 class KtrPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Kontrolregistreringer API."""
 
-    default_endpoint: str = "Kontrolregistreringer/Virksomhed"
+    default_endpoint: ENDP_T = "Kontrolregistreringer/Virksomhed"
 
     cvr: Optional[CVR_T] = Field(default=None)
     se: Optional[SE_T] = Field(default=None)
@@ -89,7 +96,7 @@ class KtrPayload(BasePayload):
 class KtrObsPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Kontrolobservationer API."""
 
-    default_endpoint: str = "Kontrolobservationer"
+    default_endpoint: ENDP_T = "Kontrolobservationer"
 
     cpr: CPR_T = Field()
     registrering_fra: Optional[date] = Field(default=None)
@@ -99,7 +106,7 @@ class KtrObsPayload(BasePayload):
 class LigPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Ligningssager API."""
 
-    default_endpoint: str = "Ligningssager"
+    default_endpoint: ENDP_T = "Ligningssager"
 
     cvr: Optional[CVR_T] = Field(default=None)
     se: Optional[SE_T] = Field(default=None)
@@ -114,7 +121,7 @@ class LigPayload(BasePayload):
 class MomsPayload(BasePayload, UdstillingMixin):
     """An API client for Dataudstillingsplatformens (DUPLA) Momsangivelser API."""
 
-    default_endpoint: str = "Momsangivelse"
+    default_endpoint: ENDP_T = "Momsangivelse"
     se: List[str] = Field()
     afregning_start: date = Field()
     afregning_slut: date = Field()
@@ -123,7 +130,7 @@ class MomsPayload(BasePayload, UdstillingMixin):
 class LonsumPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Lønsumsangivelser API."""
 
-    default_endpoint: str = "Lønsumsangivelser"
+    default_endpoint: ENDP_T = "Lønsumsangivelser"
     se: List[str] = Field()
 
     registrering_fra: Optional[date] = Field(default=None)
@@ -136,7 +143,7 @@ class LonsumPayload(BasePayload):
 class SelskabSambeskatningPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Selskabsambeskatningskreds API."""
 
-    default_endpoint: str = "Selskabsskatteoplysninger/Selskabsambeskatningskreds"
+    default_endpoint: ENDP_T = "Selskabsskatteoplysninger/Selskabsambeskatningskreds"
     cvr: Optional[CVR_T] = Field(default=None)
     se: Optional[SE_T] = Field(default=None)
 
@@ -148,7 +155,7 @@ class SelskabSambeskatningPayload(BasePayload):
 class SelskabSelvangivelse(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Selskabselvangivelse API."""
 
-    default_endpoint: str = "Selskabsskatteoplysninger/Selskabselvangivelse"
+    default_endpoint: ENDP_T = "Selskabsskatteoplysninger/Selskabselvangivelse"
 
     cvr: Optional[CVR_T] = Field(default=None)
     se: Optional[SE_T] = Field(default=None)
