@@ -76,12 +76,12 @@ A description of how to test your API can be found [here](./scripts/README.md).
 The base api can be used as following:
 
 ```python
+from datetime import date
 from uuid import uuid4
-from datetime import date, timedelta
+import dupla
+from dupla import DuplaApiKeys
 
-from dupla.base import DuplaApiBase
-
-api = DuplaApiBase(
+api = dupla.DuplaAccess(
     transaction_id=str(uuid4()),
     agreement_id="your-aftale-id-goes-here",
     pkcs12_filename="path-to-cert-file",
@@ -91,21 +91,14 @@ api = DuplaApiBase(
 )
 
 # lets see if this company (se_number 9876543210) has done any VAT the last year
-payload = {
-    "VirksomhedSENummer": "9876543210",
-    "AfregningPeriodeForholdPeriodeStartDato": "2010-12-31",
-    "AfregningPeriodeForholdPeriodeSlutDato": date.today().isoformat(),
-    "UdstillingRegistreringFra": (date.today() - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "UdstillingRegistreringTil": date.today().strftime("%Y-%m-%dT%H:%M:%SZ"),
-}
+kwargs = {DuplaApiKeys.SE: ["12345678"],
+          DuplaApiKeys.AFREGNING_START: "2010-12-31",
+          DuplaApiKeys.AFREGNING_SLUT: date.today().isoformat()}
+payload = dupla.payload.MomsPayload(**kwargs)
 
-response = api.get(
-    url="https://api.skat.dk/Momsangivelse",
-    params=payload
-)
+data = api.get_data(payload)
 
-# prints the whole response, use response.json().get("data") for data only
-print(response.json())
+print(data)
 ```
 
 © ERST 2023
