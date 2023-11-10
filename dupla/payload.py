@@ -1,9 +1,10 @@
 from datetime import date, datetime
-from typing import List, Optional, TypeAlias
+from typing import Any, Dict, List, Optional, TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from .endpoint import DuplaApiKeys
+from .timestamp import as_utc_str
 
 CVR_T: TypeAlias = List[str]
 CPR_T: TypeAlias = List[str]
@@ -11,12 +12,37 @@ SE_T: TypeAlias = List[str]
 
 
 class BasePayload(BaseModel):
+    """Base Payload Pydantic model"""
+
     default_endpoint: str = ""
 
-    def get_payload(self):
+    def get_payload(self) -> Dict[str, Any]:
+        """Get the payload in a json-able format.
+        Excludes None values."""
         return self.model_dump(
-            mode="json", exclude={"default_endpoint"}, by_alias=True, exclude_none=True
+            mode="json",
+            exclude={"default_endpoint"},
+            by_alias=True,
+            exclude_none=True,
         )
+
+
+class UdstillingMixin(BaseModel):
+    udstilling_fra: Optional[datetime] = Field(
+        default=None,
+        serialization_alias=DuplaApiKeys.UDSTILLING_FRA,
+    )
+    udstilling_til: Optional[datetime] = Field(
+        default=None,
+        serialization_alias=DuplaApiKeys.UDSTILLING_TIL,
+    )
+
+    @field_serializer("udstilling_fra")
+    @field_serializer("udstilling_til")
+    def serialize_udstilling(self, dt: Optional[datetime]) -> Optional[str]:
+        if dt is None:
+            return dt
+        return as_utc_str(dt)
 
 
 class KtrPayload(BasePayload):
@@ -75,21 +101,13 @@ class LigPayload(BasePayload):
     )
 
 
-class MomsPayload(BasePayload):
+class MomsPayload(BasePayload, UdstillingMixin):
     """An API client for Dataudstillingsplatformens (DUPLA) Momsangivelser API."""
 
     default_endpoint: str = "Momsangivelse"
     se: List[str] = Field(serialization_alias=DuplaApiKeys.SE)
     afregning_start: date = Field(serialization_alias=DuplaApiKeys.AFREGNING_START)
     afregning_slut: date = Field(serialization_alias=DuplaApiKeys.AFREGNING_SLUT)
-    udstilling_fra: Optional[datetime] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.UDSTILLING_FRA,
-    )
-    udstilling_til: Optional[datetime] = Field(
-        default=None,
-        serialization_alias=DuplaApiKeys.UDSTILLING_TIL,
-    )
 
 
 class LonsumPayload(BasePayload):
