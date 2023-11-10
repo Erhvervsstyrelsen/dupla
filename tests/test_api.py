@@ -38,8 +38,12 @@ def build_dummy_api(max_tries=1, **kwargs) -> dp.DuplaAccess:
     return api
 
 
+def get_num_of_len(n: int = 1):
+    return fake.numerify("#" * n)
+
+
 def get_fake_cvr(n=1):
-    return [fake.numerify("#" * 8) for _ in range(n)]
+    return [get_num_of_len(8) for _ in range(n)]
 
 
 def get_fake_se(n=1):
@@ -47,7 +51,7 @@ def get_fake_se(n=1):
 
 
 def get_fake_cpr(n=1):
-    return [fake.numerify("#" * 10) for _ in range(n)]
+    return [get_num_of_len(10) for _ in range(n)]
 
 
 def build_dummy_payload(api: Type[BaseModel]):
@@ -181,3 +185,16 @@ def test_api_builds_payload(payload_cls, mocker):
     api.get_data(obj)
     assert spy.call_count == 1
     assert spy2.call_count == 1
+
+
+@pytest.mark.parametrize("str_len", [0, 1, 2, 7, 9, 10])
+def test_invalid_se(str_len: int):
+    with pytest.raises(ValidationError):
+        dp.payload.KtrPayload(se=[get_num_of_len(n=str_len)])
+    dp.payload.KtrPayload(se=[get_num_of_len(n=8)])
+
+
+def test_other_invalid_se():
+    dp.payload.KtrPayload(se=[get_num_of_len(n=8)])
+    with pytest.raises(ValidationError):
+        dp.payload.KtrPayload(se=["a" * 8])

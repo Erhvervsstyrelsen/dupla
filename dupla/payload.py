@@ -1,16 +1,37 @@
 import abc
 from datetime import date, datetime
-from typing import Any, ClassVar, Dict, List, Optional, TypeAlias
+from typing import Annotated, Any, ClassVar, Dict, List, Optional, TypeAlias
 from urllib.parse import urljoin
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_serializer
 
 from .api_keys import DuplaApiKeys
 from .timestamp import as_utc_str
 
-CVR_T: TypeAlias = List[str]
-CPR_T: TypeAlias = List[str]
-SE_T: TypeAlias = List[str]
+
+def _string_num_len_n(n: int) -> str:
+    """Helper function to validate the correctness
+    of integer-like strings. The length of the string is checked."""
+
+    def _inner(s: str):
+        try:
+            int(s)  # Verify the number is int-like
+        except ValueError:
+            raise ValueError(f"Number must be integer-like, got {s!r}") from None
+        if len(s) != n:
+            raise ValueError(f"Must of length {n}.")
+        return s
+
+    return _inner
+
+
+CVR_STR = Annotated[str, AfterValidator(_string_num_len_n(8))]
+SE_STR = Annotated[str, AfterValidator(_string_num_len_n(8))]
+CPR_STR = Annotated[str, AfterValidator(_string_num_len_n(10))]
+
+CVR_T: TypeAlias = List[CVR_STR]
+CPR_T: TypeAlias = List[CPR_STR]
+SE_T: TypeAlias = List[SE_STR]
 
 ENDP_T = ClassVar[str]
 
@@ -122,7 +143,7 @@ class MomsPayload(BasePayload, UdstillingMixin):
     """An API client for Dataudstillingsplatformens (DUPLA) Momsangivelser API."""
 
     default_endpoint: ENDP_T = "Momsangivelse"
-    se: List[str] = Field()
+    se: SE_T = Field()
     afregning_start: date = Field()
     afregning_slut: date = Field()
 
@@ -131,7 +152,7 @@ class LonsumPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Lønsumsangivelser API."""
 
     default_endpoint: ENDP_T = "Lønsumsangivelser"
-    se: List[str] = Field()
+    se: SE_T = Field()
 
     registrering_fra: Optional[date] = Field(default=None)
     registrering_til: Optional[date] = Field(default=None)

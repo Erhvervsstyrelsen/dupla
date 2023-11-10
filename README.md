@@ -22,16 +22,20 @@ Run tests:
 This package defines some endpoints which has some (limited) knowledge
 of the API schema used by SKAT. The classes are:
 
-* `dupla.DuplaKtrApi`
-* `dupla.DuplaLigApi`
-* `dupla.DuplaMomsApi`
-* `dupla.DuplaKtrObsApi`
-* `dupla.DuplaLonsumApi`
-* `dupla.DuplaSelskabSambeskatningApi`
-* `dupla.DuplaSelskabSelvangivelseApi`
+* `dupla.payload.KtrPayload`
+* `dupla.payload.LigPayload`
+* `dupla.payload.MomsPayload`
+* `dupla.payload.KtrObsPayload`
+* `dupla.payload.LonsumPayload`
+* `dupla.payload.SelskabSambeskatningPayload`
+* `dupla.payload.SelskabSelvangivelsePayload`
 
 Please c.f. the docs of the respective classes for more information
-on what each endpoint is for. An example using the VAT (Moms in Danish) endpoint:
+on what each endpoint is for. Each payload model is a Pydantic model, so inputs
+are validated.
+
+
+An example using the VAT (Moms in Danish) endpoint:
 
 ```python
 from uuid import uuid4
