@@ -56,7 +56,7 @@ class BasePayload(BaseModel, abc.ABC):
         return urljoin(base_url, cls.default_endpoint)
 
 
-class UdstillingMixin(BaseModel):
+class UdstillingMixin(BaseModel, abc.ABC):
     model_config = ConfigDict(alias_generator=get_alias, populate_by_name=True, extra="forbid")
 
     udstilling_fra: Optional[datetime] = Field(
