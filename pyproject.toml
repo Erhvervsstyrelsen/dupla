@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A python API for making requests to DUPLA (Dataudvekslingsplatformen)"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = {text = "Apache License 2.0"}
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -52,12 +52,12 @@ dev = [
 
 [tool.black]
 line-length = 100
-target-version = ['py310']
+target-version = ['py39']
 
 [tool.ruff]
 line-length = 100
 exclude = ["__init__.py",
            "scripts"]
-target-version = "py310"
+target-version = "py39"
 extend-select = ["I", "RUF"]
 ignore = ["RUF012"]

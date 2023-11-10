@@ -1,4 +1,4 @@
-from typing import Annotated, List, TypeAlias
+from typing import Annotated, List
 
 from pydantic import AfterValidator
 
@@ -23,6 +23,6 @@ CVR_STR = Annotated[str, AfterValidator(_string_num_len_n(8))]
 SE_STR = Annotated[str, AfterValidator(_string_num_len_n(8))]
 CPR_STR = Annotated[str, AfterValidator(_string_num_len_n(10))]
 
-CVR_T: TypeAlias = List[CVR_STR]
-CPR_T: TypeAlias = List[CPR_STR]
-SE_T: TypeAlias = List[SE_STR]
+CVR_T = List[CVR_STR]
+CPR_T = List[CPR_STR]
+SE_T = List[SE_STR]
