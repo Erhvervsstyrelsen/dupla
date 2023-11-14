@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from .api_keys import DuplaApiKeys
 from .timestamp import as_utc_str
 
-ALIAS_DCT: Dict[str, str] = {
+ALIAS_MAPPING: Dict[str, str] = {
     "default_endpoint": "default_endpoint",
     "se": DuplaApiKeys.SE,
     "cvr": DuplaApiKeys.CVR,
@@ -21,11 +21,14 @@ ALIAS_DCT: Dict[str, str] = {
     "selvangivelse_aar": DuplaApiKeys.SELVANGIVESE_INDKOMST_AAR,
     "angivelse_fra": DuplaApiKeys.ANGIVELSE_GYLDIG_FRA,
     "angivelse_til": DuplaApiKeys.ANGIVELSE_GYLDIG_TIL,
+    "udstilling_fra": DuplaApiKeys.UDSTILLING_FRA,
+    "udstilling_til": DuplaApiKeys.UDSTILLING_TIL,
 }
 
 
 def get_alias(name: str) -> str:
-    return ALIAS_DCT[name]
+    """Get the mapping between the Pydantic field name and the Dupla key name."""
+    return ALIAS_MAPPING[name]
 
 
 class BasePayload(BaseModel, abc.ABC):
