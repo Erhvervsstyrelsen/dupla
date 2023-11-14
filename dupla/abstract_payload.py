@@ -26,7 +26,7 @@ ALIAS_MAPPING: Dict[str, str] = {
 }
 
 
-def _get_alias(name: str) -> str | None:
+def _get_alias(name: str) -> str:
     """Get the mapping between the Pydantic field name and the Dupla key name."""
     return ALIAS_MAPPING.get(name, name)
 
