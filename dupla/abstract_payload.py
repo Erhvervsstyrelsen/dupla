@@ -47,7 +47,7 @@ class BasePayload(BaseModel, abc.ABC):
         Excludes None values."""
         return self.model_dump(
             mode="json",
-            exclude={"default_endpoint"},
+            exclude=["default_endpoint"],
             by_alias=True,
             exclude_none=True,
         )
