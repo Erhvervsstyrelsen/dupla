@@ -35,46 +35,10 @@ on what each endpoint is for. Each payload model is a Pydantic model, so inputs
 are validated.
 
 
-An example using the VAT (Moms in Danish) endpoint:
-
-```python
-from uuid import uuid4
-from datetime import date
-from dupla import DuplaMomsApi, DuplaApiKeys
-
-# Get the default VAT endpoint from the skat api
-endpoint = DuplaMomsApi.endpoint_from_base_url("https://api.skat.dk")
-
-api = DuplaMomsApi(
-    endpoint=endpoint,
-    transaction_id=str(uuid4()),
-    agreement_id="your-aftale-id-goes-here",
-    pkcs12_filename="path-to-cert-file",
-    pkcs12_password="goodpassword",
-    billetautomat_url="https://oces.billetautomat.skat.dk/auth/realms/oces/certificates/cert",
-    jwt_token_expiration_overlap=5
-)
-
-# datetime objects are automatically converted
-# into the correct string representation
-payload = {
-    DuplaApiKeys.SE=["98765432"],
-    DuplaApiKeys.UDSTILLING_FRA=date.today() - timedelta(days=365),
-    DuplaApiKeys.UDSTILLING_TIL=date.today()
-}
-data = api.get_data(payload, format_payload=True, validate_payload=True)
-
-print(data)
-```
-
-The fields which can be provided is given by the `api.FIELDS` dictionary,
-which is a key-value set of the API key as well as whether the key is required
-by the SKAT api. Should a key you wish to provide be missing, a consistency check of
-unknown keys can be disabled by setting `api.allow_unknown_fields = True`.
-
 ### Using the base API
 
-The base api can be used as following:
+The base api access class can be used as following.
+In this example, we access the VAT (Moms in Danish) endpoint.
 
 ```python
 from datetime import date, timedelta
