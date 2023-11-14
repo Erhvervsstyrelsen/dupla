@@ -1,6 +1,6 @@
-from typing import Annotated, List
+from typing import Annotated, Any, List
 
-from pydantic import AfterValidator
+from pydantic import AfterValidator, BeforeValidator
 
 
 def _string_num_len_n(n: int) -> str:
@@ -19,9 +19,16 @@ def _string_num_len_n(n: int) -> str:
     return _inner
 
 
-CVR_STR = Annotated[str, AfterValidator(_string_num_len_n(8))]
-SE_STR = Annotated[str, AfterValidator(_string_num_len_n(8))]
-CPR_STR = Annotated[str, AfterValidator(_string_num_len_n(10))]
+def _stringify_int(val: Any) -> Any:
+    """Integers are valid, they just need to be strings"""
+    if isinstance(val, int):
+        return str(val)
+    return val
+
+
+CVR_STR = Annotated[str, BeforeValidator(_stringify_int), AfterValidator(_string_num_len_n(8))]
+SE_STR = Annotated[str, BeforeValidator(_stringify_int), AfterValidator(_string_num_len_n(8))]
+CPR_STR = Annotated[str, BeforeValidator(_stringify_int), AfterValidator(_string_num_len_n(10))]
 
 CVR_T = List[CVR_STR]
 CPR_T = List[CPR_STR]

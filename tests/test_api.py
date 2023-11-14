@@ -198,3 +198,15 @@ def test_other_invalid_se():
     dp.payload.KtrPayload(se=[get_num_of_len(n=8)])
     with pytest.raises(ValidationError):
         dp.payload.KtrPayload(se=["a" * 8])
+
+
+@pytest.mark.parametrize(
+    "input",
+    [
+        ["12345678"],
+        [12345678, 87654321],
+        ["12345678", 12345678],
+    ],
+)
+def test_int_or_string(input):
+    dp.payload.KtrPayload(se=input)

@@ -26,9 +26,9 @@ ALIAS_MAPPING: Dict[str, str] = {
 }
 
 
-def _get_alias(name: str) -> str:
+def _get_alias(name: str) -> str | None:
     """Get the mapping between the Pydantic field name and the Dupla key name."""
-    return ALIAS_MAPPING[name]
+    return ALIAS_MAPPING.get(name, name)
 
 
 class BasePayload(BaseModel, abc.ABC):
