@@ -26,7 +26,7 @@ ALIAS_MAPPING: Dict[str, str] = {
 }
 
 
-def get_alias(name: str) -> str:
+def _get_alias(name: str) -> str:
     """Get the mapping between the Pydantic field name and the Dupla key name."""
     return ALIAS_MAPPING[name]
 
@@ -34,7 +34,7 @@ def get_alias(name: str) -> str:
 class BasePayload(BaseModel, abc.ABC):
     """Base Payload Pydantic model"""
 
-    model_config = ConfigDict(alias_generator=get_alias, populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(alias_generator=_get_alias, populate_by_name=True, extra="forbid")
 
     @property
     @abc.abstractmethod
@@ -60,7 +60,7 @@ class BasePayload(BaseModel, abc.ABC):
 
 
 class UdstillingMixin(BaseModel, abc.ABC):
-    model_config = ConfigDict(alias_generator=get_alias, populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(alias_generator=_get_alias, populate_by_name=True, extra="forbid")
 
     udstilling_fra: Optional[datetime] = Field(
         default=None,
