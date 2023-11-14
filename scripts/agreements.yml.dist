@@ -1,6 +1,0 @@
-<<agreement 1>>:
-  id: <<agreement-id>>
-  endpoint: <<endpoint-name>>
-<<agreement 2>>:
-  id: <<agreement-id>>
-  endpoint: <<endpoint-name>>

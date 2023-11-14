@@ -7,6 +7,7 @@ import requests
 import requests_pkcs12
 
 from .exceptions import DuplaApiAuthenticationException
+from .timestamp import get_utc_now
 
 __all__ = [
     "DuplaApiBase",
@@ -137,7 +138,7 @@ class DuplaApiBase:
                 "JWT error: access_token not present in response payload"
             )
         if expires_in := result_payload.get("expires_in"):
-            self.token_expiration_time = datetime.now() + timedelta(seconds=expires_in)
+            self.token_expiration_time = get_utc_now() + timedelta(seconds=expires_in)
         else:
             raise DuplaApiAuthenticationException(
                 "JWT error: expires_in not present in response payload"
@@ -159,6 +160,6 @@ class DuplaApiBase:
         Returns:
             True if the JWT token is expired, False otherwise.
         """
-        return datetime.now() >= self.token_expiration_time - timedelta(
+        return get_utc_now() >= self.token_expiration_time - timedelta(
             seconds=self.jwt_token_expiration_overlap
         )
