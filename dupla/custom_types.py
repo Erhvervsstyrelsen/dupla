@@ -1,13 +1,13 @@
-from typing import Annotated, Any, List
+from typing import Annotated, Any, Callable, List
 
 from pydantic import AfterValidator, BeforeValidator
 
 
-def _string_num_len_n(n: int) -> str:
+def _string_num_len_n(n: int) -> Callable[[str], str]:
     """Helper function to validate the correctness
     of integer-like strings. The length of the string is checked."""
 
-    def _inner(s: str):
+    def _inner(s: str) -> str:
         try:
             int(s)  # Verify the number is int-like
         except ValueError:
