@@ -60,15 +60,11 @@ class BasePayload(BaseModel, abc.ABC):
 
 
 class UdstillingMixin(BaseModel, abc.ABC):
-    model_config = ConfigDict(alias_generator=_get_alias, populate_by_name=True, extra="forbid")
-
     udstilling_fra: Optional[datetime] = Field(
         default=None,
-        serialization_alias=DuplaApiKeys.UDSTILLING_FRA,
     )
     udstilling_til: Optional[datetime] = Field(
         default=None,
-        serialization_alias=DuplaApiKeys.UDSTILLING_TIL,
     )
 
     @field_serializer("udstilling_fra")

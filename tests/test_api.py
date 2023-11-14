@@ -1,6 +1,6 @@
 import random
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Type
 
 import pytest
@@ -210,3 +210,17 @@ def test_other_invalid_se():
 )
 def test_int_or_string(input):
     dp.payload.KtrPayload(se=input)
+
+
+def test_mom_udstilling(faker):
+    payload = {
+        DuplaApiKeys.SE: get_fake_se(n=5),
+        DuplaApiKeys.AFREGNING_START: "1970-01-01",
+        DuplaApiKeys.AFREGNING_SLUT: date.today(),
+        DuplaApiKeys.UDSTILLING_FRA: faker.date_time(),
+        DuplaApiKeys.UDSTILLING_TIL: faker.date_time(),
+    }
+    m = dp.payload.MomsPayload(**payload)
+    assert isinstance(m, dp.payload.MomsPayload)
+    assert isinstance(m.udstilling_til, datetime)
+    assert isinstance(m.udstilling_fra, datetime)

@@ -45,7 +45,7 @@ class LigPayload(BasePayload):
     registrering_til: Optional[date] = Field(default=None)
 
 
-class MomsPayload(BasePayload, UdstillingMixin):
+class MomsPayload(UdstillingMixin, BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Momsangivelser API."""
 
     default_endpoint: ENDP_T = "Momsangivelse"
