@@ -117,7 +117,7 @@ def test_get_payload(faker):
     val = payload[dp.DuplaApiKeys.TEKNISK_REGISTRERING_FRA]
     assert isinstance(val, str)
     assert val == str(to_date)
-    assert datetime.fromisoformat(val).date() == to_date
+    assert dateutil.parser.parse(val).date() == to_date
 
 
 def test_payload_bad_arg(faker):
@@ -170,7 +170,7 @@ def test_moms_datetime(faker, as_iso: bool):
         assert obj.udstilling_til == dt
         payload = obj.get_payload()
         assert DuplaApiKeys.UDSTILLING_TIL in payload
-        assert datetime.fromisoformat(payload[DuplaApiKeys.UDSTILLING_TIL]) == dt
+        assert pytest.approx(dt) == dateutil.parser.parse(payload[DuplaApiKeys.UDSTILLING_TIL])
 
         assert isinstance(payload[DuplaApiKeys.AFREGNING_START], str)
         assert payload[DuplaApiKeys.AFREGNING_START] == str(dt.date())
@@ -233,7 +233,4 @@ def test_mom_udstilling(faker):
         fmt = dateutil.parser.parse(dct[key])
         assert fmt.tzname() == "UTC"
         exp = payload[key]
-        assert fmt.date() == exp.date()
-        assert fmt.hour == exp.hour
-        assert fmt.minute == exp.minute
-        assert fmt.second == exp.second
+        assert pytest.approx(fmt) == exp
