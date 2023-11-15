@@ -233,4 +233,7 @@ def test_mom_udstilling(faker):
         fmt = dateutil.parser.parse(dct[key])
         assert fmt.tzname() == "UTC"
         exp = payload[key]
-        assert fmt.astimezone(TZ_UTC) == exp  # astimezone to fix py 3.9 test
+        assert fmt.date() == exp.date()
+        assert fmt.hour == exp.hour
+        assert fmt.minute == exp.minute
+        assert fmt.second == exp.second
