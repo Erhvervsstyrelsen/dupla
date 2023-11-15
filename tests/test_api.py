@@ -3,6 +3,7 @@ import uuid
 from datetime import date, datetime, timedelta
 from typing import Type
 
+import dateutil.parser
 import pytest
 from faker import Faker
 from pydantic import BaseModel, ValidationError
@@ -229,6 +230,7 @@ def test_mom_udstilling(faker):
     dct = m.get_payload()
     for key in [DuplaApiKeys.UDSTILLING_FRA, DuplaApiKeys.UDSTILLING_TIL]:
         assert isinstance(dct[key], str)
-        fmt = datetime.fromisoformat(dct[key])
+        fmt = dateutil.parser.parse(dct[key])
+        assert fmt.tzname() == "UTC"
         exp = payload[key]
         assert fmt == exp
