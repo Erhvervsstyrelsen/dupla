@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 
 import dupla as dp
 from dupla.api_keys import DuplaApiKeys
+from dupla.timestamp import TZ_UTC
 
 ALL_PAYLOADS: tuple[Type[dp.payload.BasePayload]] = (
     dp.payload.KtrPayload,
@@ -157,7 +158,7 @@ def test_moms_datetime(faker, as_iso: bool):
     """Test some date/datetime conversion"""
     for _ in range(20):
         # Repeat the test a few times with different dates
-        dt: datetime = faker.date_time()
+        dt: datetime = faker.date_time(tzinfo=TZ_UTC)
         obj = dp.payload.MomsPayload(
             se=get_fake_se(),
             udstilling_til=dt.isoformat() if as_iso else dt,
@@ -217,10 +218,17 @@ def test_mom_udstilling(faker):
         DuplaApiKeys.SE: get_fake_se(n=5),
         DuplaApiKeys.AFREGNING_START: "1970-01-01",
         DuplaApiKeys.AFREGNING_SLUT: date.today(),
-        DuplaApiKeys.UDSTILLING_FRA: faker.date_time(),
-        DuplaApiKeys.UDSTILLING_TIL: faker.date_time(),
+        DuplaApiKeys.UDSTILLING_FRA: faker.date_time(tzinfo=TZ_UTC),
+        DuplaApiKeys.UDSTILLING_TIL: faker.date_time(tzinfo=TZ_UTC),
     }
     m = dp.payload.MomsPayload(**payload)
     assert isinstance(m, dp.payload.MomsPayload)
     assert isinstance(m.udstilling_til, datetime)
     assert isinstance(m.udstilling_fra, datetime)
+
+    dct = m.get_payload()
+    for key in [DuplaApiKeys.UDSTILLING_FRA, DuplaApiKeys.UDSTILLING_TIL]:
+        assert isinstance(dct[key], str)
+        fmt = datetime.fromisoformat(dct[key])
+        exp = payload[key]
+        assert fmt == exp

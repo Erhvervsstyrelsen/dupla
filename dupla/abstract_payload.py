@@ -67,8 +67,7 @@ class UdstillingMixin(BaseModel, abc.ABC):
         default=None,
     )
 
-    @field_serializer("udstilling_fra")
-    @field_serializer("udstilling_til")
+    @field_serializer("udstilling_fra", "udstilling_til")
     def serialize_udstilling(self, dt: Optional[datetime]) -> Optional[str]:
         if dt is None:
             return dt
