@@ -1,14 +1,16 @@
 import random
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Type
 
+import dateutil.parser
 import pytest
 from faker import Faker
 from pydantic import BaseModel, ValidationError
 
 import dupla as dp
 from dupla.api_keys import DuplaApiKeys
+from dupla.timestamp import TZ_UTC, as_utc
 
 ALL_PAYLOADS: tuple[Type[dp.payload.BasePayload]] = (
     dp.payload.KtrPayload,
@@ -21,6 +23,17 @@ ALL_PAYLOADS: tuple[Type[dp.payload.BasePayload]] = (
 )
 
 fake = Faker()
+
+
+def cmp_datetime(dt1: datetime, dt2: datetime) -> None:
+    assert isinstance(dt1, datetime)
+    assert isinstance(dt2, datetime)
+    dt1 = as_utc(dt1)
+    dt2 = as_utc(dt2)
+    assert dt1.date() == dt2.date()
+    assert dt1.hour == dt2.hour
+    assert dt1.minute == dt2.minute
+    assert dt1.second == dt2.second
 
 
 def build_dummy_api(max_tries=1, **kwargs) -> dp.DuplaAccess:
@@ -115,7 +128,7 @@ def test_get_payload(faker):
     val = payload[dp.DuplaApiKeys.TEKNISK_REGISTRERING_FRA]
     assert isinstance(val, str)
     assert val == str(to_date)
-    assert datetime.fromisoformat(val).date() == to_date
+    assert dateutil.parser.parse(val).date() == to_date
 
 
 def test_payload_bad_arg(faker):
@@ -157,7 +170,7 @@ def test_moms_datetime(faker, as_iso: bool):
     """Test some date/datetime conversion"""
     for _ in range(20):
         # Repeat the test a few times with different dates
-        dt: datetime = faker.date_time()
+        dt: datetime = faker.date_time(tzinfo=TZ_UTC)
         obj = dp.payload.MomsPayload(
             se=get_fake_se(),
             udstilling_til=dt.isoformat() if as_iso else dt,
@@ -168,7 +181,7 @@ def test_moms_datetime(faker, as_iso: bool):
         assert obj.udstilling_til == dt
         payload = obj.get_payload()
         assert DuplaApiKeys.UDSTILLING_TIL in payload
-        assert datetime.fromisoformat(payload[DuplaApiKeys.UDSTILLING_TIL]) == dt
+        cmp_datetime(dateutil.parser.parse(payload[DuplaApiKeys.UDSTILLING_TIL]), dt)
 
         assert isinstance(payload[DuplaApiKeys.AFREGNING_START], str)
         assert payload[DuplaApiKeys.AFREGNING_START] == str(dt.date())
@@ -210,3 +223,25 @@ def test_other_invalid_se():
 )
 def test_int_or_string(input):
     dp.payload.KtrPayload(se=input)
+
+
+def test_mom_udstilling(faker):
+    payload = {
+        DuplaApiKeys.SE: get_fake_se(n=5),
+        DuplaApiKeys.AFREGNING_START: "1970-01-01",
+        DuplaApiKeys.AFREGNING_SLUT: date.today(),
+        DuplaApiKeys.UDSTILLING_FRA: faker.date_time(tzinfo=TZ_UTC),
+        DuplaApiKeys.UDSTILLING_TIL: faker.date_time(tzinfo=TZ_UTC),
+    }
+    m = dp.payload.MomsPayload(**payload)
+    assert isinstance(m, dp.payload.MomsPayload)
+    assert isinstance(m.udstilling_til, datetime)
+    assert isinstance(m.udstilling_fra, datetime)
+
+    dct = m.get_payload()
+    for key in [DuplaApiKeys.UDSTILLING_FRA, DuplaApiKeys.UDSTILLING_TIL]:
+        assert isinstance(dct[key], str)
+        fmt = dateutil.parser.parse(dct[key])
+        assert fmt.tzname() == "UTC"
+        exp = payload[key]
+        cmp_datetime(fmt, exp)

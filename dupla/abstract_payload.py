@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from .api_keys import DuplaApiKeys
-from .timestamp import as_utc_str
+from .timestamp import as_utc
 
 ALIAS_MAPPING: Dict[str, str] = {
     "default_endpoint": "default_endpoint",
@@ -60,20 +60,15 @@ class BasePayload(BaseModel, abc.ABC):
 
 
 class UdstillingMixin(BaseModel, abc.ABC):
-    model_config = ConfigDict(alias_generator=_get_alias, populate_by_name=True, extra="forbid")
-
     udstilling_fra: Optional[datetime] = Field(
         default=None,
-        serialization_alias=DuplaApiKeys.UDSTILLING_FRA,
     )
     udstilling_til: Optional[datetime] = Field(
         default=None,
-        serialization_alias=DuplaApiKeys.UDSTILLING_TIL,
     )
 
-    @field_serializer("udstilling_fra")
-    @field_serializer("udstilling_til")
+    @field_serializer("udstilling_fra", "udstilling_til")
     def serialize_udstilling(self, dt: Optional[datetime]) -> Optional[str]:
         if dt is None:
             return dt
-        return as_utc_str(dt)
+        return as_utc(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
