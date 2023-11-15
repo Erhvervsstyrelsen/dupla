@@ -10,7 +10,7 @@ from pydantic import BaseModel, ValidationError
 
 import dupla as dp
 from dupla.api_keys import DuplaApiKeys
-from dupla.timestamp import TZ_UTC
+from dupla.timestamp import TZ_UTC, as_utc
 
 ALL_PAYLOADS: tuple[Type[dp.payload.BasePayload]] = (
     dp.payload.KtrPayload,
@@ -23,6 +23,17 @@ ALL_PAYLOADS: tuple[Type[dp.payload.BasePayload]] = (
 )
 
 fake = Faker()
+
+
+def cmp_datetime(dt1: datetime, dt2: datetime) -> None:
+    assert isinstance(dt1, datetime)
+    assert isinstance(dt2, datetime)
+    dt1 = as_utc(dt1)
+    dt2 = as_utc(dt2)
+    assert dt1.date() == dt2.date()
+    assert dt1.hour == dt2.hour
+    assert dt1.minute == dt2.minute
+    assert dt1.second == dt2.second
 
 
 def build_dummy_api(max_tries=1, **kwargs) -> dp.DuplaAccess:
@@ -170,7 +181,7 @@ def test_moms_datetime(faker, as_iso: bool):
         assert obj.udstilling_til == dt
         payload = obj.get_payload()
         assert DuplaApiKeys.UDSTILLING_TIL in payload
-        assert pytest.approx(dt) == dateutil.parser.parse(payload[DuplaApiKeys.UDSTILLING_TIL])
+        cmp_datetime(dateutil.parser.parse(payload[DuplaApiKeys.UDSTILLING_TIL]), dt)
 
         assert isinstance(payload[DuplaApiKeys.AFREGNING_START], str)
         assert payload[DuplaApiKeys.AFREGNING_START] == str(dt.date())
@@ -233,4 +244,4 @@ def test_mom_udstilling(faker):
         fmt = dateutil.parser.parse(dct[key])
         assert fmt.tzname() == "UTC"
         exp = payload[key]
-        assert pytest.approx(fmt) == exp
+        cmp_datetime(fmt, exp)
