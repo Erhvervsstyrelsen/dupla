@@ -15,7 +15,3 @@ def get_dk_now() -> datetime:
 
 def as_utc(ts: datetime) -> datetime:
     return ts.astimezone(TZ_UTC)
-
-
-def as_utc_str(ts: datetime) -> str:
-    return as_utc(ts).strftime("%Y-%m-%dT%H:%M:%SZ")
