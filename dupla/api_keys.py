@@ -24,9 +24,17 @@ class DuplaApiKeys:
     ANGIVELSE_GYLDIG_FRA: str = "AngivelseGyldigDatoFra"
     ANGIVELSE_GYLDIG_TIL: str = "AngivelseGyldigDatoTil"
 
+    REGISTRERING_FORHOLD_FRA: str = "RegistreringForholdGyldigDatoFra"
+    REGISTRERING_FORHOLD_TIL: str = "RegistreringForholdGyldigDatoFra"
+
+    STATUS_GYLDIG_FRA: str = "VirksomhedStatusTypeGyldigFra"
+    STATUS_GYLDIG_TIL: str = "VirksomhedStatusTypeGyldigTil"
+
     SELVANGIVESE_INDKOMST_AAR: str = "SelskabSelvangivelseIndkomstÅr"
 
     SAG_TYPE_KODE: str = "SagTypeKode"
+    PLIGT_KODE: str = "PligtKode"
+    STATUS_TYPE_KODE: str = "VirksomhedStatusTypeKode"
 
     @classmethod
     def get_all_field_names(cls) -> List[str]:
