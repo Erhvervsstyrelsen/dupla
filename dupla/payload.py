@@ -1,5 +1,5 @@
 from datetime import date
-from typing import ClassVar, Optional
+from typing import ClassVar, List, Optional
 
 from pydantic import Field
 
@@ -79,7 +79,7 @@ class SelskabSambeskatningPayload(BasePayload):
     registrering_til: Optional[date] = Field(default=None)
 
 
-class SelskabSelvangivelse(BasePayload):
+class SelskabSelvangivelsePayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Selskabselvangivelse API."""
 
     default_endpoint: ENDP_T = "Selskabsskatteoplysninger/Selskabselvangivelse"
@@ -88,5 +88,39 @@ class SelskabSelvangivelse(BasePayload):
     se: Optional[SE_T] = Field(default=None)
 
     selvangivelse_aar: Optional[str] = Field(default=None)
+    registrering_fra: Optional[date] = Field(default=None)
+    registrering_til: Optional[date] = Field(default=None)
+
+
+class VirksomhedspligterPayload(BasePayload):
+    """A payload for accessing DUPLA Virksomhedspligter."""
+
+    default_endpoint: ENDP_T = "Virksomhedspligter"
+
+    cvr: Optional[CVR_T] = Field(default=None)
+    se: Optional[SE_T] = Field(default=None)
+
+    pligt_kode: Optional[List[int]] = Field(default=None)
+
+    regisrering_forhold_fra: Optional[date] = Field(default=None)
+    regisrering_forhold_til: Optional[date] = Field(default=None)
+
+    registrering_fra: Optional[date] = Field(default=None)
+    registrering_til: Optional[date] = Field(default=None)
+
+
+class VirksomhedsstatusPayload(BasePayload):
+    """A payload for accessing DUPLA Virksomhedsstatus."""
+
+    default_endpoint: ENDP_T = "Virksomhedsstatus"
+
+    cvr: Optional[CVR_T] = Field(default=None)
+    se: Optional[SE_T] = Field(default=None)
+
+    status_type_kode: Optional[List[int]] = Field(default=None)
+
+    status_gyldig_fra: Optional[date] = Field(default=None)
+    status_gyldig_til: Optional[date] = Field(default=None)
+
     registrering_fra: Optional[date] = Field(default=None)
     registrering_til: Optional[date] = Field(default=None)

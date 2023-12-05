@@ -19,7 +19,9 @@ ALL_PAYLOADS: tuple[Type[dp.payload.BasePayload]] = (
     dp.payload.KtrObsPayload,
     dp.payload.LonsumPayload,
     dp.payload.SelskabSambeskatningPayload,
-    dp.payload.SelskabSelvangivelse,
+    dp.payload.SelskabSelvangivelsePayload,
+    dp.payload.VirksomhedspligterPayload,
+    dp.payload.VirksomhedsstatusPayload,
 )
 
 fake = Faker()
@@ -85,6 +87,10 @@ def build_dummy_payload(api: Type[BaseModel]):
         k.AFREGNING_SLUT: to_date,
         k.UDSTILLING_FRA: from_datetime,
         k.UDSTILLING_TIL: to_datetime,
+        k.REGISTRERING_FORHOLD_FRA: from_date,
+        k.REGISTRERING_FORHOLD_TIL: to_date,
+        k.STATUS_GYLDIG_FRA: from_date,
+        k.STATUS_GYLDIG_TIL: to_date,
         k.TEKNISK_REGISTRERING_FRA: from_date,
         k.TEKNISK_REGISTRERING_TIL: to_date,
         k.SELVANGIVESE_INDKOMST_AAR: str(random.randint(1970, 2050)),

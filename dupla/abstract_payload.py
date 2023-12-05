@@ -17,12 +17,19 @@ ALIAS_MAPPING: Dict[str, str] = {
     "registrering_til": DuplaApiKeys.TEKNISK_REGISTRERING_TIL,
     "afregning_start": DuplaApiKeys.AFREGNING_START,
     "afregning_slut": DuplaApiKeys.AFREGNING_SLUT,
-    "sag_type_kode": DuplaApiKeys.SAG_TYPE_KODE,
     "selvangivelse_aar": DuplaApiKeys.SELVANGIVESE_INDKOMST_AAR,
     "angivelse_fra": DuplaApiKeys.ANGIVELSE_GYLDIG_FRA,
     "angivelse_til": DuplaApiKeys.ANGIVELSE_GYLDIG_TIL,
     "udstilling_fra": DuplaApiKeys.UDSTILLING_FRA,
     "udstilling_til": DuplaApiKeys.UDSTILLING_TIL,
+    "regisrering_forhold_fra": DuplaApiKeys.REGISTRERING_FORHOLD_FRA,
+    "regisrering_forhold_til": DuplaApiKeys.REGISTRERING_FORHOLD_TIL,
+    "status_gyldig_fra": DuplaApiKeys.STATUS_GYLDIG_FRA,
+    "status_gyldig_til": DuplaApiKeys.STATUS_GYLDIG_TIL,
+    # Codes
+    "pligt_kode": DuplaApiKeys.PLIGT_KODE,
+    "status_type_kode": DuplaApiKeys.STATUS_TYPE_KODE,
+    "sag_type_kode": DuplaApiKeys.SAG_TYPE_KODE,
 }
 
 
