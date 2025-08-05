@@ -51,7 +51,7 @@ api = dupla.DuplaAccess(
     agreement_id="your-aftale-id-goes-here",
     pkcs12_filename="path-to-cert-file",
     pkcs12_password="goodpassword",
-    billetautomat_url="https://oces.billetautomat.skat.dk/auth/realms/oces/certificates/cert",
+    billetautomat_url="https://bat.skat.dk/realms/oces/protocol/openid-connect/token",
     jwt_token_expiration_overlap=5
 )
 
