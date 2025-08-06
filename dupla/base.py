@@ -106,22 +106,21 @@ class DuplaApiBase:
         return self.request("get", url, params=params, **kwargs)
 
     def _authenticate(self) -> None:
-        """Retrieves a JWT token from the authentication service (billetautomat) to be used for
+        """Retrieves a JWT token from the authentication service (BAT2) to be used for
         Dupla API requests. The connection to the authentication service is encrypted with mTLS
-        and the set certificate. To retrieve a JWT token, the payload must include 2 fields -
-        client_id which is always "api-gateway" and so called "nonce" which is uuid v4 string.
-        Nonce should be unique per request and can be understood as a request id.
+        and the set certificate. To retrieve a JWT token, the payload must include an `x-transaction-id`
+        header and the 3 form fields client_id=api-gateway, scope=openid and grant_type=password
         The token expiration time is set as well for further checks.
         """
         self.token_expiration_time = None
         self.jwt_token = None
-        nonce = str(uuid4())
 
-        payload = {"client_id": "api-gateway", "nonce": nonce}
+        headers = {"x-transaktion-id": self.transaction_id}
+        payload = {"client_id": "api-gateway", "scope": "openid", "grant_type": "password"}
 
         with requests.Session() as session:
             session.mount(self.billetautomat_url, self._pkcs12_adapter)
-            result = session.post(self.billetautomat_url, json=payload)
+            result = session.post(self.billetautomat_url, headers=headers, data=payload)
             if result.ok:
                 result_payload = result.json()
             else:
