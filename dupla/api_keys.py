@@ -32,6 +32,8 @@ class DuplaApiKeys:
 
     SELVANGIVESE_INDKOMST_AAR: str = "SelskabSelvangivelseIndkomstÅr"
 
+    KONTROLOPLYSNING_RAPPORT_INDKOMST_AAR: str = "KontrolOplysningRapportIndkomstÅr"
+
     SAG_TYPE_KODE: str = "SagTypeKode"
     PLIGT_KODE: str = "PligtKode"
     STATUS_TYPE_KODE: str = "VirksomhedStatusTypeKode"

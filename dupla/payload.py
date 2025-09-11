@@ -30,6 +30,15 @@ class KtrObsPayload(BasePayload):
     registrering_til: Optional[date] = Field(default=None)
 
 
+class VirksomhedskontroloplysningerPayload(BasePayload):
+    """An API client for Dataudstillingsplatformens (DUPLA) Virksomhedskontroloplysninger API."""
+
+    default_endpoint: ENDP_T = "virksomhedskontroloplysninger"
+
+    se: SE_T = Field(default=None)
+    kontroloplysning_aar: int = Field(default=None)
+
+
 class LigPayload(BasePayload):
     """An API client for Dataudstillingsplatformens (DUPLA) Ligningssager API."""
 
@@ -65,6 +74,15 @@ class LonsumPayload(BasePayload):
 
     angivelse_fra: Optional[date] = Field(default=None)
     angivelse_til: Optional[date] = Field(default=None)
+
+
+class PersonkontroloplysningerPayload(BasePayload):
+    """An API client for Dataudstillingsplatformens (DUPLA) Personkontroloplysninger API."""
+
+    default_endpoint: ENDP_T = "personkontroloplysninger"
+
+    cpr: CPR_T = Field(default=None)
+    kontroloplysning_aar: int = Field(default=None)
 
 
 class SelskabSambeskatningPayload(BasePayload):
