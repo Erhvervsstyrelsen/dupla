@@ -18,6 +18,7 @@ ALIAS_MAPPING: Dict[str, str] = {
     "afregning_start": DuplaApiKeys.AFREGNING_START,
     "afregning_slut": DuplaApiKeys.AFREGNING_SLUT,
     "selvangivelse_aar": DuplaApiKeys.SELVANGIVESE_INDKOMST_AAR,
+    "kontroloplysning_aar": DuplaApiKeys.KONTROLOPLYSNING_RAPPORT_INDKOMST_AAR,
     "angivelse_fra": DuplaApiKeys.ANGIVELSE_GYLDIG_FRA,
     "angivelse_til": DuplaApiKeys.ANGIVELSE_GYLDIG_TIL,
     "udstilling_fra": DuplaApiKeys.UDSTILLING_FRA,
