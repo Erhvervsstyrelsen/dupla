@@ -30,6 +30,7 @@ class DuplaAccess(DuplaApiBase):
         base_url: str = r"https://api.skat.dk",
         jwt_token_expiration_overlap: int = 5,
         max_tries: int = 8,
+        onbehalfofse: Optional[str] = None,
     ):
         """Instantiates new DUPLA API endpoint client.
         Args:
@@ -46,10 +47,15 @@ class DuplaAccess(DuplaApiBase):
                 and will be rejected in a next request. Defaults to 5 seconds.
             max_tries (int): Maximum number of times a failed request is re-attempted in
                 ``get_data``. Defaults to 8.
+            onbehalfofse (Optional[str]): Optional SE number to include in authentication payload.
         """
 
         self.base_url = base_url
         self.max_tries = max_tries
+        # store value by passing it into the base initializer. If we set
+        # `self.onbehalfofse` here and then call `super().__init__()` which
+        # also sets the attribute (with its own parameter), our value would be
+        # overwritten. Passing it through avoids that.
         super().__init__(
             transaction_id,
             agreement_id,
@@ -57,6 +63,7 @@ class DuplaAccess(DuplaApiBase):
             pkcs12_password,
             billetautomat_url,
             jwt_token_expiration_overlap,
+            onbehalfofse=onbehalfofse,
         )
 
     def get_endpoint(self, payload: BasePayload) -> str:
