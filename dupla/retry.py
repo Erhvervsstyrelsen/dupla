@@ -19,7 +19,7 @@ def is_retryable(exc: Exception) -> bool:
         status = exc.response.status_code
         if status >= 500:
             return True                    # 5xx server errors
-        if status in (408, 428, 429):
+        if status in (408):
             return True                    # timeout / rate limit
         return False                       # most other 4xx (e.g., 400, 401, 403, 404, 422, 423)
 
