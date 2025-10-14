@@ -1,23 +1,27 @@
 import requests
 
-def _is_retryable(exc: Exception) -> bool:
-    """
-    Decide whether an exception is retryable.
+def is_retryable(exc: Exception) -> bool:
+    """Return True if the exception should be retried.
 
     Args:
-        exc (Exception): Exception raised by the HTTP call.
+        exc: Exception raised during the HTTP call.
 
     Returns:
-        bool: True if we should retry (5xx or network issues), False for 4xx.
+        True for transient failures (network errors, HTTP 5xx, 408, 429),
+        False for permanent errors (most 4xx, including 422).
     """
-    # Network-layer problems: retry
-    if isinstance(exc, (requests.exceptions.ConnectionError,
-                        requests.exceptions.Timeout)):
+    # Network-layer problems → retry
+    if isinstance(exc, (requests.exceptions.ConnectionError, requests.exceptions.Timeout)):
         return True
 
-    # HTTP errors: retry only for 5xx
+    # HTTP errors → inspect status code
     if isinstance(exc, requests.exceptions.HTTPError) and exc.response is not None:
-        return 500 <= exc.response.status_code < 600
+        status = exc.response.status_code
+        if status >= 500:
+            return True                    # 5xx server errors
+        if status in (408, 428, 429):
+            return True                    # timeout / rate limit
+        return False                       # most other 4xx (e.g., 400, 401, 403, 404, 422, 423)
 
-    # Everything else: don't retry
+    # Everything else → don't retry
     return False

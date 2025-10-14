@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import backoff
 import requests
 
-from dupla.retry import _is_retryable
+from dupla.retry import is_retryable
 
 from .base import DuplaApiBase
 from .exceptions import DuplaApiException, DuplaResponseException
@@ -92,7 +92,7 @@ class DuplaAccess(DuplaApiBase):
         @backoff.on_exception(
             backoff.expo,
             (requests.exceptions.RequestException, DuplaApiException, requests.exceptions.HTTPError),
-            giveup=lambda e: not _is_retryable(e),
+            giveup=lambda e: not is_retryable(e),
             max_tries=self.max_tries,
         )
         def _getter():
@@ -123,7 +123,4 @@ class DuplaAccess(DuplaApiBase):
                     "An error occurred while parsing the DUPLA response.",
                     response=response,
                 ) from e
-            except requests.exceptions.HTTPError as e:
-                if 400 <= response.raise_for_status() < 500:
-                    raise
         return _getter()
