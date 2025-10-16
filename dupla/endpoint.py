@@ -96,6 +96,13 @@ class DuplaAccess(DuplaApiBase):
             giveup=lambda e: not is_retryable(e), # is_retryable returns true if it should be retried and if it is not true (false) then it should stop
             max_tries=self.max_tries,
         )
+        @backoff.on_predicate(
+        backoff.runtime,
+        predicate=lambda r: r in (429, 503),
+        value=lambda r: float(r.headers.get("Retry-After")),
+        max_tries=self.max_tries,
+        jitter=None,
+        )
         def _getter():
             response = self.get(endpoint, params=payload)
             response.raise_for_status()
