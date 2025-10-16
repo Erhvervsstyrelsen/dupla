@@ -89,10 +89,11 @@ class DuplaAccess(DuplaApiBase):
         """Execute a given payload. No conversion is done on the payload."""
 
         # Construct the getter with a backoff, and a modified number of max tries
+
         @backoff.on_exception(
             backoff.expo,
-            (requests.exceptions.RequestException, DuplaApiException, requests.exceptions.HTTPError),
-            giveup=lambda e: not is_retryable(e),
+            (requests.exceptions.RequestException),
+            giveup=lambda e: not is_retryable(e), # is_retryable returns true if it should be retried and if it is not true (false) then it should stop
             max_tries=self.max_tries,
         )
         def _getter():

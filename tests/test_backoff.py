@@ -42,7 +42,33 @@ def test_backoff_http_err_handling(params: test_case):
         assert count == 1
 
 
-def create_response(status_code: int):
+@pytest.mark.parametrize("status", [429, 503])
+def test_backoff_retry_after_header_value(status:int):
+    count = 0
+    max_retries = 3
+
+    @backoff.on_predicate(
+    backoff.runtime,
+    predicate=lambda r: r.status_code in (429, 503),
+    value=lambda r: float(r.headers.get("Retry-After")),
+    max_tries=max_retries,
+    jitter=None,
+)
+    def simulate_get() -> requests.Response:
+        nonlocal count
+        count = count + 1
+        if count < max_retries:
+            result = create_response(status, retry_after=0.0) 
+            assert result.status_code == status
+            return result
+        return create_response(status_code=200, retry_after=None)
+
+    response = simulate_get()
+    assert count == max_retries
+    assert response.status_code == 200
+def create_response(status_code: int, retry_after: float | None):
     result = requests.Response()
     result.status_code = status_code
+    if retry_after is not None:
+        result.headers["Retry-After"] = str(retry_after)
     return result
