@@ -66,6 +66,32 @@ def test_backoff_retry_after_header_value(status:int):
     response = simulate_get()
     assert count == max_retries
     assert response.status_code == 200
+
+@pytest.mark.parametrize("exec_type", [
+                            requests.exceptions.ConnectionError,
+                            requests.exceptions.Timeout
+                          ])
+def test_backoff_retry_network_request_error(exec_type: requests.exceptions.RequestException):
+    count = 0
+    max_tries = 3
+
+    @backoff.on_exception(
+        backoff.constant,
+        (requests.exceptions.RequestException),
+        giveup=lambda e: not is_retryable(e),
+        max_tries=max_tries,
+        interval=0.01,
+        jitter=None,
+    )
+    def simulate_get():
+        nonlocal count
+        count = count + 1
+        raise exec_type
+    
+    with pytest.raises(Exception):
+        simulate_get()
+    if exec_type:
+        assert count == max_tries
 def create_response(status_code: int, retry_after: float | None):
     result = requests.Response()
     result.status_code = status_code
