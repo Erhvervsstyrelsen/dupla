@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed Backoff behavior
   - Change on_exception mode to constant to have the same duration on each retry 
   - Added on_predicate to retry for the duration read from header Retry-After for error code 429 & 503
-- 
+- All errors that should be retried returns true
 
 ### Added
 ### Changed
