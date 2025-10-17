@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import backoff
 import requests
 
-from dupla.retry import is_retryable
+from dupla.retry import stop_retry_on_err
 
 from .base import DuplaApiBase
 from .exceptions import DuplaApiException, DuplaResponseException
@@ -93,15 +93,17 @@ class DuplaAccess(DuplaApiBase):
         @backoff.on_exception(
             backoff.expo,
             (requests.exceptions.RequestException),
-            giveup=lambda e: not is_retryable(e), # is_retryable returns true if it should be retried and if it is not true (false) then it should stop
+            giveup=lambda e: stop_retry_on_err(
+                e
+            ),  # is_retryable returns true if it should be retried and if it is not true (false) then it should stop
             max_tries=self.max_tries,
         )
         @backoff.on_predicate(
-        backoff.runtime,
-        predicate=lambda r: r in (429, 503),
-        value=lambda r: float(r.headers.get("Retry-After")),
-        max_tries=self.max_tries,
-        jitter=None,
+            backoff.runtime,
+            predicate=lambda r: r in (429, 503),
+            value=lambda r: float(r.headers.get("Retry-After")),
+            max_tries=self.max_tries,
+            jitter=None,
         )
         def _getter():
             response = self.get(endpoint, params=payload)

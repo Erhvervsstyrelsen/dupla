@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Added do not retry handling for error codes 4xx
+- endpoint.py no longer retries on all raised errors this is defined by adding the giveup argument and is defined in retry.py
+- Added 3 tests to validate expected backoff behavior. 11 tests total due to parameterization
+- Changed Backoff behavior
+  - Change on_exception mode to constant to have the same duration on each retry 
+  - Added on_predicate to retry for the duration read from header Retry-After for error code 429 & 503
+- 
 
 ### Added
 ### Changed
