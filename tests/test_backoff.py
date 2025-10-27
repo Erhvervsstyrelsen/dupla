@@ -5,19 +5,24 @@ import backoff
 
 from dupla.retry import stop_retry_on_err
 
+
 @dataclass
 class test_case:
     err_code: int
     expect_retry: bool
 
-@pytest.mark.parametrize("params", [
-                             test_case(400, True),
-                             test_case(402, True),
-                             test_case(408, True),
-                             test_case(429, False),
-                             test_case(500, False),
-                             test_case(600, True),
-                          ])
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        test_case(400, False),
+        test_case(402, False),
+        test_case(408, False),
+        test_case(429, True),
+        test_case(500, True),
+        test_case(600, False),
+    ],
+)
 def test_backoff_http_err_handling(params: test_case):
     count = 0
 
@@ -33,29 +38,34 @@ def test_backoff_http_err_handling(params: test_case):
         nonlocal count
         count = count + 1
         raise requests.exceptions.HTTPError(response=create_response(params.err_code, None))
-    
+
     with pytest.raises(Exception):
         simulate_get()
-    expected = 1 if params.expect_retry else 2
+    if params.expect_retry:
+        expected = 2
+    else:
+        expected = 1
+
     assert count == expected
 
+
 @pytest.mark.parametrize("status", [429, 503])
-def test_backoff_retry_after_header_value(status:int):
+def test_backoff_retry_after_header_value(status: int):
     count = 0
     max_retries = 3
 
     @backoff.on_predicate(
-    backoff.runtime,
-    predicate=lambda r: r.status_code in (429, 503),
-    value=lambda r: float(r.headers.get("Retry-After")),
-    max_tries=max_retries,
-    jitter=None,
-)
+        backoff.runtime,
+        predicate=lambda r: r.status_code in (429, 503),
+        value=lambda r: float(r.headers.get("Retry-After"), 0.1),
+        max_tries=max_retries,
+        jitter=None,
+    )
     def simulate_get() -> requests.Response:
         nonlocal count
         count = count + 1
         if count < max_retries:
-            result = create_response(status, retry_after=0.0) 
+            result = create_response(status, retry_after=0.0)
             assert result.status_code == status
             return result
         return create_response(status_code=200, retry_after=None)
@@ -64,10 +74,10 @@ def test_backoff_retry_after_header_value(status:int):
     assert count == max_retries
     assert response.status_code == 200
 
-@pytest.mark.parametrize("exec_type", [
-                            requests.exceptions.ConnectionError,
-                            requests.exceptions.Timeout
-                          ])
+
+@pytest.mark.parametrize(
+    "exec_type", [requests.exceptions.ConnectionError, requests.exceptions.Timeout, None]
+)
 def test_backoff_retry_network_request_error(exec_type: requests.exceptions.RequestException):
     count = 0
     max_tries = 3
@@ -84,11 +94,13 @@ def test_backoff_retry_network_request_error(exec_type: requests.exceptions.Requ
         nonlocal count
         count = count + 1
         raise exec_type
-    
+
     with pytest.raises(Exception):
         simulate_get()
+
     if exec_type:
         assert count == max_tries
+
 
 def test_stack_exception_outer_predicate_inner_interaction():
     """Exercise on_exception (network) + on_predicate (429/503) together.
@@ -98,10 +110,10 @@ def test_stack_exception_outer_predicate_inner_interaction():
     """
     count = 0
     script: list[tuple[str, int]] = [
-        ("exc", 0),       # ConnectionError
-        ("resp", 429),    # predicate retry
-        ("resp", 429),    # predicate retry
-        ("resp", 200),    # success
+        ("exc", 0),  # ConnectionError
+        ("resp", 429),  # predicate retry
+        ("resp", 429),  # predicate retry
+        ("resp", 200),  # success
     ]
 
     @backoff.on_exception(
@@ -126,7 +138,7 @@ def test_stack_exception_outer_predicate_inner_interaction():
         if kind == "exc":
             raise requests.exceptions.ConnectionError()
         if kind == "resp" and val in (429, 503):
-            return create_response(val, retry_after=0.)
+            return create_response(val, retry_after=0.0)
         if kind == "resp" and val == 200:
             return create_response(200, None)
         raise AssertionError("invalid script state")
@@ -134,6 +146,7 @@ def test_stack_exception_outer_predicate_inner_interaction():
     resp = simulated_call()
     assert count == 4
     assert resp.status_code == 200
+
 
 def create_response(status_code: int, retry_after: float | None):
     result = requests.Response()

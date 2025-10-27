@@ -93,15 +93,13 @@ class DuplaAccess(DuplaApiBase):
         @backoff.on_exception(
             backoff.expo,
             (requests.exceptions.RequestException),
-            giveup=lambda e: stop_retry_on_err(
-                e
-            ),  # is_retryable returns true if it should be retried and if it is not true (false) then it should stop
+            giveup=lambda e: stop_retry_on_err(e),
             max_tries=self.max_tries,
         )
         @backoff.on_predicate(
             backoff.runtime,
             predicate=lambda r: r in (429, 503),
-            value=lambda r: float(r.headers.get("Retry-After")),
+            value=lambda r: float(r.headers.get("Retry-After"), 0.1),
             max_tries=self.max_tries,
             jitter=None,
         )
@@ -133,4 +131,5 @@ class DuplaAccess(DuplaApiBase):
                     "An error occurred while parsing the DUPLA response.",
                     response=response,
                 ) from e
+
         return _getter()
