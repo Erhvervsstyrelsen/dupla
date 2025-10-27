@@ -20,9 +20,9 @@ def stop_retry_on_err(exc: Exception) -> bool:
         status = exc.response.status_code
         if status >= 500 and status < 600:
             return False                    # 5xx server errors
-        if status in (429,503):
-            return False                    # too many requests
-        return True                         # most other 4xx (e.g., 400, 401, 403, 404, 422, 423)
+        if status in (429,503):  # too many requests + temporary unable to handle request
+            return False
+        return True
 
     # Everything else → don't retry
     return True
