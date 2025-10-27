@@ -2,7 +2,7 @@ import requests
 
 
 def stop_retry_on_err(exc: Exception) -> bool:
-    """Return True if the exception should not be retried.
+    """Return True if the http-get action should be cancelled (not retried) due to the received exception.
 
     Args:
         exc: Exception raised during the HTTP call.
