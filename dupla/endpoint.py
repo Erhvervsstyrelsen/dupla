@@ -61,7 +61,7 @@ class DuplaAccess(DuplaApiBase):
 
     def get_endpoint(self, payload: BasePayload) -> str:
         """Retrieve the endpoint URL."""
-        return payload.endpoint_from_base_url(self.base_url)
+        return payload.__class__.endpoint_from_base_url(self.base_url)
 
     def get_data(
         self,
