@@ -89,7 +89,6 @@ class DuplaAccess(DuplaApiBase):
         """Execute a given payload. No conversion is done on the payload."""
 
         # Construct the getter with a backoff, and a modified number of max tries
-
         @backoff.on_exception(
             backoff.expo,
             (requests.exceptions.RequestException),

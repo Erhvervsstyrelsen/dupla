@@ -80,7 +80,7 @@ def test_backoff_retry_after_header_value(status: int, reply_after: str | float 
 
 
 @pytest.mark.parametrize(
-    "exec_type", [requests.exceptions.ConnectionError, requests.exceptions.Timeout, None]
+    "exec_type", [requests.exceptions.ConnectionError, requests.exceptions.Timeout]
 )
 def test_backoff_retry_network_request_error(exec_type: requests.exceptions.RequestException):
     count = 0
@@ -102,8 +102,7 @@ def test_backoff_retry_network_request_error(exec_type: requests.exceptions.Requ
     with pytest.raises(Exception):
         simulate_get()
 
-    if exec_type:
-        assert count == max_tries
+    assert count == max_tries
 
 
 def test_stack_exception_outer_predicate_inner_interaction():
