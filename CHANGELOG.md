@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `requests.exceptions.Timeout`
   - For the 429 and 503, the `Retry-After` header (if present) is respected.
   - Do *not* perform retry on `DuplaResponseException` (which is an internal Exception, signifying invalid data returned from server).
+  - Robust handling of `Retry-After` header on http errors 429 & 503. 
 
 ### Added
 ### Changed

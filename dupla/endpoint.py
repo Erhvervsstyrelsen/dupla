@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import backoff
 import requests
 
-from dupla.retry import stop_retry_on_err
+from dupla.retry import parse_header_retry_after, stop_retry_on_err
 
 from .base import DuplaApiBase
 from .exceptions import DuplaApiException, DuplaResponseException
@@ -99,7 +99,7 @@ class DuplaAccess(DuplaApiBase):
         @backoff.on_predicate(
             backoff.runtime,
             predicate=lambda r: r in (429, 503),
-            value=lambda r: float(r.headers.get("Retry-After"), 0.1),
+            value=lambda r: parse_header_retry_after(r.headers),
             max_tries=self.max_tries,
             jitter=None,
         )

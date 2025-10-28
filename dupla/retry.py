@@ -1,3 +1,4 @@
+from typing import Any
 import requests
 
 
@@ -28,3 +29,9 @@ def stop_retry_on_err(exc: Exception) -> bool:
     return True
 
 
+def parse_header_retry_after(response_header: dict[str,Any], fallback: float = 1) -> float:
+    try:
+        return float(response_header["Retry-After"])
+    except Exception:
+        return fallback
+    

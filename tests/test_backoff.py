@@ -1,9 +1,11 @@
 from dataclasses import dataclass
+import itertools
+from typing import Any
 import pytest
 import requests
 import backoff
 
-from dupla.retry import stop_retry_on_err
+from dupla.retry import parse_header_retry_after, stop_retry_on_err
 
 
 @dataclass
@@ -48,16 +50,18 @@ def test_backoff_http_err_handling(params: test_case):
 
     assert count == expected
 
-
-@pytest.mark.parametrize("status", [429, 503])
-def test_backoff_retry_after_header_value(status: int):
+test_err_codes=[429,503]
+test_err_reply_after: list[str | float | None]=[0.01, "0.01", "", "empty", None]
+combinations = list(itertools.product(test_err_codes, test_err_reply_after))
+@pytest.mark.parametrize("status, reply_after", combinations)
+def test_backoff_retry_after_header_value(status: int, reply_after: str | float | None):
     count = 0
     max_retries = 3
 
     @backoff.on_predicate(
         backoff.runtime,
         predicate=lambda r: r.status_code in (429, 503),
-        value=lambda r: float(r.headers.get("Retry-After"), 0.1),
+        value=lambda r: parse_header_retry_after(r.headers, fallback=0.01),
         max_tries=max_retries,
         jitter=None,
     )
@@ -65,7 +69,7 @@ def test_backoff_retry_after_header_value(status: int):
         nonlocal count
         count = count + 1
         if count < max_retries:
-            result = create_response(status, retry_after=0.0)
+            result = create_response(status, reply_after)
             assert result.status_code == status
             return result
         return create_response(status_code=200, retry_after=None)
@@ -148,7 +152,7 @@ def test_stack_exception_outer_predicate_inner_interaction():
     assert resp.status_code == 200
 
 
-def create_response(status_code: int, retry_after: float | None):
+def create_response(status_code: int, retry_after: float | str | None):
     result = requests.Response()
     result.status_code = status_code
     if retry_after is not None:
