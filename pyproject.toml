@@ -42,6 +42,7 @@ dev = [
   "pytest",
   "pytest-mock",
   "Faker",
+  "python-dateutil",
   "black==23.7.0",
   "ruff==0.1.5",
   "pre-commit",
