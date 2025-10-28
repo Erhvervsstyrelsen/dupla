@@ -36,6 +36,7 @@ test = [
   "pytest",
   "pytest-mock",
   "Faker",
+  "python-dateutil"
 ]
 dev = [
   "pytest",

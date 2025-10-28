@@ -129,7 +129,8 @@ def test_datetime(val):
 @pytest.mark.parametrize(
     "val",
     [
-        "2023-10-01",
+        "2023-13-01",
+        "2023-10-32",
         "2023/10/03",
     ],
 )
