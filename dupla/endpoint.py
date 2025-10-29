@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional
 import backoff
 import requests
 
+from dupla.retry import parse_header_retry_after, stop_retry_on_err
+
 from .base import DuplaApiBase
 from .exceptions import DuplaApiException, DuplaResponseException
 from .payload import BasePayload
@@ -61,7 +63,7 @@ class DuplaAccess(DuplaApiBase):
 
     def get_endpoint(self, payload: BasePayload) -> str:
         """Retrieve the endpoint URL."""
-        return payload.endpoint_from_base_url(self.base_url)
+        return payload.__class__.endpoint_from_base_url(self.base_url)
 
     def get_data(
         self,
@@ -89,8 +91,16 @@ class DuplaAccess(DuplaApiBase):
         # Construct the getter with a backoff, and a modified number of max tries
         @backoff.on_exception(
             backoff.expo,
-            (requests.exceptions.RequestException, DuplaApiException),
+            (requests.exceptions.RequestException),
+            giveup=lambda e: stop_retry_on_err(e),
             max_tries=self.max_tries,
+        )
+        @backoff.on_predicate(
+            backoff.runtime,
+            predicate=lambda r: r in (429, 503),
+            value=lambda r: parse_header_retry_after(r.headers),
+            max_tries=self.max_tries,
+            jitter=None,
         )
         def _getter():
             response = self.get(endpoint, params=payload)

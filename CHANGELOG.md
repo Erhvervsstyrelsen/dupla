@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Changed retry-behaviour:
+  - Only perform retry for the following errors:
+    - Http error 429 (Too many requests)
+    - Http error 503 (Service unavailable)
+    - `requests.exceptions.ConnectionError`
+    - `requests.exceptions.Timeout`
+  - For the 429 and 503, the `Retry-After` header (if present) is respected.
+  - Do *not* perform retry on `DuplaResponseException` (which is an internal Exception, signifying invalid data returned from server).
+  - Robust handling of `Retry-After` header on http errors 429 & 503. 
 
 ### Added
 ### Changed
