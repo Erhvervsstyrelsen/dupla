@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 import itertools
-from typing import Any
+from dataclasses import dataclass
+from typing import Union
+
+import backoff
 import pytest
 import requests
-import backoff
 
 from dupla.retry import parse_header_retry_after, stop_retry_on_err
 
@@ -50,11 +51,14 @@ def test_backoff_http_err_handling(params: test_case):
 
     assert count == expected
 
-test_err_codes=[429,503]
-test_err_reply_after: list[str | float | None]=[0.01, "0.01", "", "empty", None]
+
+test_err_codes = [429, 503]
+test_err_reply_after: list[Union[str, float, None]] = [0.01, "0.01", "", "empty", None]
 combinations = list(itertools.product(test_err_codes, test_err_reply_after))
+
+
 @pytest.mark.parametrize("status, reply_after", combinations)
-def test_backoff_retry_after_header_value(status: int, reply_after: str | float | None):
+def test_backoff_retry_after_header_value(status: int, reply_after: Union[str, float, None]):
     count = 0
     max_retries = 3
 
@@ -151,7 +155,7 @@ def test_stack_exception_outer_predicate_inner_interaction():
     assert resp.status_code == 200
 
 
-def create_response(status_code: int, retry_after: float | str | None):
+def create_response(status_code: int, retry_after: Union[float, str, None]):
     result = requests.Response()
     result.status_code = status_code
     if retry_after is not None:
