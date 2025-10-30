@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 import itertools
-from typing import Any
+from dataclasses import dataclass
+
+import backoff
 import pytest
 import requests
-import backoff
 
 from dupla.retry import parse_header_retry_after, stop_retry_on_err
 
@@ -50,9 +50,12 @@ def test_backoff_http_err_handling(params: test_case):
 
     assert count == expected
 
-test_err_codes=[429,503]
-test_err_reply_after: list[str | float | None]=[0.01, "0.01", "", "empty", None]
+
+test_err_codes = [429, 503]
+test_err_reply_after: list[str | float | None] = [0.01, "0.01", "", "empty", None]
 combinations = list(itertools.product(test_err_codes, test_err_reply_after))
+
+
 @pytest.mark.parametrize("status, reply_after", combinations)
 def test_backoff_retry_after_header_value(status: int, reply_after: str | float | None):
     count = 0
