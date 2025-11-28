@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [Unreleased]
+### Changed
+### Added
+
+## 0.2.1
 ### Changed
 - Changed retry-behaviour:
   - Only perform retry for the following errors:
@@ -16,9 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - For the 429 and 503, the `Retry-After` header (if present) is respected.
   - Do *not* perform retry on `DuplaResponseException` (which is an internal Exception, signifying invalid data returned from server).
   - Robust handling of `Retry-After` header on http errors 429 & 503. 
-
-### Added
-### Changed
  - Use BAT2
 
 ## 0.0.2
