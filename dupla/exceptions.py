@@ -1,6 +1,6 @@
 from typing import Any
 
-__all__ = ["DuplaApiException", "DuplaApiAuthenticationException", "InvalidPayloadException"]
+__all__ = ["DuplaApiAuthenticationException", "DuplaApiException", "InvalidPayloadException"]
 
 
 class DuplaApiException(Exception):

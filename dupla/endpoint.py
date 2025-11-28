@@ -7,7 +7,7 @@ import requests
 from dupla.retry import parse_header_retry_after, stop_retry_on_err
 
 from .base import DuplaApiBase
-from .exceptions import DuplaApiException, DuplaResponseException
+from .exceptions import DuplaResponseException
 from .payload import BasePayload
 
 logger = logging.getLogger(__file__)
