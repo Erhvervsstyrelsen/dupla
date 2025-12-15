@@ -52,7 +52,8 @@ api = dupla.DuplaAccess(
     pkcs12_filename="path-to-cert-file",
     pkcs12_password="goodpassword",
     billetautomat_url="https://bat.skat.dk/realms/oces/protocol/openid-connect/token",
-    jwt_token_expiration_overlap=5
+    jwt_token_expiration_overlap=5,
+    onbehalfofse = "98765432" #Optional
 )
 
 # lets see if this company (se_number 98765432) has done any VAT the last year

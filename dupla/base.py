@@ -30,6 +30,11 @@ class DuplaApiBase:
         jwt_token_expiration_overlap (int): The overlap time for token expiration time (in seconds)
             to avoid situations where token is almost expired during the check and will be rejected
             in a next request.
+        onbehalfofse (str | None): Optional SE number to authenticate on behalf of another entity.
+            When provided, this SE number will be included in the authentication payload to indicate
+            that the API client is acting on behalf of the specified entity. This is useful for
+            scenarios where a third party (like an accountant or consultant) needs to access data
+            for their clients.
     """
 
     transaction_id: str
@@ -44,6 +49,7 @@ class DuplaApiBase:
         pkcs12_password: str,
         billetautomat_url: str,
         jwt_token_expiration_overlap: int,
+        onbehalfofse: str | None = None,
     ):
         self.transaction_id = transaction_id
         self.agreement_id = agreement_id
@@ -56,6 +62,8 @@ class DuplaApiBase:
         self.jwt_token_expiration_overlap = jwt_token_expiration_overlap
         self.token_expiration_time: Optional[datetime] = None
         self.jwt_token: Optional[str] = None
+        # Store the SE number for on-behalf-of authentication (if provided)
+        self.onbehalfofse = onbehalfofse
 
     def request(self, method, url, **kwargs) -> requests.Response:
         """Constructs and sends a `requests.Request` with appropriate headers
@@ -105,18 +113,32 @@ class DuplaApiBase:
         """
         return self.request("get", url, params=params, **kwargs)
 
-    def _authenticate(self) -> None:
+    def _authenticate(self, onbehalfofse: Optional[str] = None) -> None:
         """Retrieves a JWT token from the authentication service (BAT2) to be used for
         Dupla API requests. The connection to the authentication service is encrypted with mTLS
         and the set certificate. To retrieve a JWT token, the payload must include an `x-transaction-id`
         header and the 3 form fields client_id=api-gateway, scope=openid and grant_type=password
         The token expiration time is set as well for further checks.
+
+        Args:
+            onbehalfofse (Optional[str]): SE number to authenticate on behalf of another entity.
+                If provided, this parameter overrides the instance's onbehalfofse attribute.
+                When included in the authentication payload, it indicates that the API client
+                is acting on behalf of the specified entity (useful for third-party access).
         """
         self.token_expiration_time = None
         self.jwt_token = None
 
         headers = {"x-transaktion-id": self.transaction_id}
         payload = {"client_id": "api-gateway", "scope": "openid", "grant_type": "password"}
+
+        # Use the provided onbehalfofse parameter, or fall back to the instance attribute
+        if onbehalfofse is None:
+            onbehalfofse = getattr(self, "onbehalfofse", None)
+        # Include onbehalfofse in the authentication payload if specified
+        # This tells the API that we're acting on behalf of another entity
+        if onbehalfofse is not None:
+            payload["onbehalfofse"] = onbehalfofse
 
         with requests.Session() as session:
             session.mount(self.billetautomat_url, self._pkcs12_adapter)
