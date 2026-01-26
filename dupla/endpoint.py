@@ -32,6 +32,7 @@ class DuplaAccess(DuplaApiBase):
         base_url: str = r"https://api.skat.dk",
         jwt_token_expiration_overlap: int = 5,
         max_tries: int = 8,
+        timeout: float = 30.0,
     ):
         """Instantiates new DUPLA API endpoint client.
         Args:
@@ -48,6 +49,12 @@ class DuplaAccess(DuplaApiBase):
                 and will be rejected in a next request. Defaults to 5 seconds.
             max_tries (int): Maximum number of times a failed request is re-attempted in
                 ``get_data``. Defaults to 8.
+            timeout (float): Timeout [s] for HTTP requests. Default: 30s.
+                Please note:
+                  - Timeout is packet-to-packet timeout. See
+                    https://requests.readthedocs.io/en/stable/user/quickstart/#timeouts .
+                  - Timeout affects the inner loop of retries. So more retries (`max_retries`)
+                    the longer total timeout effect.
         """
 
         self.base_url = base_url
@@ -59,6 +66,7 @@ class DuplaAccess(DuplaApiBase):
             pkcs12_password,
             billetautomat_url,
             jwt_token_expiration_overlap,
+            timeout,
         )
 
     def get_endpoint(self, payload: BasePayload) -> str:

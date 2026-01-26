@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 ### Added
+ - Added timeout to `request` and `session.post` calls. Defaults to 30s.
+
 
 ## 0.2.1
 ### Changed
