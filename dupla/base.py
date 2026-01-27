@@ -30,6 +30,12 @@ class DuplaApiBase:
         jwt_token_expiration_overlap (int): The overlap time for token expiration time (in seconds)
             to avoid situations where token is almost expired during the check and will be rejected
             in a next request.
+        timeout (float): Timeout [s] for HTTP requests. Default: 30s.
+            Please note:
+                - Timeout is packet-to-packet timeout. See
+                https://requests.readthedocs.io/en/stable/user/quickstart/#timeouts .
+                - Timeout affects the inner loop of retries. So more retries (`max_retries`)
+                the longer total timeout effect.
     """
 
     transaction_id: str
@@ -44,6 +50,7 @@ class DuplaApiBase:
         pkcs12_password: str,
         billetautomat_url: str,
         jwt_token_expiration_overlap: int,
+        timeout: float = 30.0,
     ):
         self.transaction_id = transaction_id
         self.agreement_id = agreement_id
@@ -54,6 +61,7 @@ class DuplaApiBase:
         )
         self.billetautomat_url = billetautomat_url
         self.jwt_token_expiration_overlap = jwt_token_expiration_overlap
+        self.timeout = timeout
         self.token_expiration_time: Optional[datetime] = None
         self.jwt_token: Optional[str] = None
 
@@ -86,6 +94,7 @@ class DuplaApiBase:
 
         with requests.Session() as session:
             session.headers.update(headers)
+            kwargs.setdefault("timeout", self.timeout)
 
             return session.request(method, url, **kwargs)
 
@@ -120,7 +129,9 @@ class DuplaApiBase:
 
         with requests.Session() as session:
             session.mount(self.billetautomat_url, self._pkcs12_adapter)
-            result = session.post(self.billetautomat_url, headers=headers, data=payload)
+            result = session.post(
+                self.billetautomat_url, headers=headers, data=payload, timeout=self.timeout
+            )
             if result.ok:
                 result_payload = result.json()
             else:
