@@ -1,0 +1,209 @@
+import asyncio
+import logging
+import ssl
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
+from uuid import uuid4
+
+import httpx
+import httpx_pkcs12
+
+from .exceptions import DuplaApiAuthenticationException, DuplaApiUsageException
+from .timestamp import get_utc_now
+
+__all__ = [
+    "AsyncDuplaApiBase",
+]
+
+logger = logging.getLogger(__file__)
+
+
+class AsyncDuplaApiBase:
+    """Async base class for API access to the Dataudveklspingsplatformen API (Dupla).
+    Handles authentication and headers for the API requests.
+
+    Must be used as an async context manager, so that the underlying `httpx.AsyncClient`
+    is opened and closed correctly:
+
+        async with AsyncDuplaApiBase(...) as api:
+            await api.get(...)
+
+    Arguments:
+        transaction_id (str): An ID used to correlate requests across the API.
+            Should be constant for IKP-DA.
+        agreement_id (str): An ID/token supplied by the API provider.
+        pkcs12_filename (str): Path to PKCS12 certificate file.
+        pkcs12_password (str): Password for PKCS12 certificate file.
+        billetautomat_url (str): Endpoint to the authentication service for requesting JWT tokens.
+        jwt_token_expiration_overlap (int): The overlap time for token expiration time (in seconds)
+            to avoid situations where token is almost expired during the check and will be rejected
+            in a next request.
+        timeout (float): Timeout [s] for HTTP requests. Default: 30s.
+            Please note:
+                - Timeout is packet-to-packet timeout. See
+                https://www.python-httpx.org/advanced/timeouts/ .
+                - Timeout affects the inner loop of retries. So more retries (`max_retries`)
+                the longer total timeout effect.
+    """
+
+    transaction_id: str
+    agreement_id: str
+    _ssl_context: ssl.SSLContext
+
+    def __init__(
+        self,
+        transaction_id: str,
+        agreement_id: str,
+        pkcs12_filename: str,
+        pkcs12_password: str,
+        billetautomat_url: str,
+        jwt_token_expiration_overlap: int,
+        timeout: float = 30.0,
+    ):
+        self.transaction_id = transaction_id
+        self.agreement_id = agreement_id
+
+        self._ssl_context = httpx_pkcs12.create_ssl_context(
+            pkcs12_data=pkcs12_filename,
+            password=pkcs12_password,
+        )
+        self.billetautomat_url = billetautomat_url
+        self.jwt_token_expiration_overlap = jwt_token_expiration_overlap
+        self.timeout = timeout
+        self.token_expiration_time: Optional[datetime] = None
+        self.jwt_token: Optional[str] = None
+        self._auth_lock = asyncio.Lock()
+        self._client: Optional[httpx.AsyncClient] = None
+
+    async def __aenter__(self) -> "AsyncDuplaApiBase":
+        self._client = await httpx.AsyncClient().__aenter__()
+        return self
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        client, self._client = self._client, None
+        if client is not None:
+            await client.__aexit__(*exc_info)
+
+    async def request(self, method, url, **kwargs) -> httpx.Response:
+        """Constructs and sends a `httpx.Request` with appropriate headers
+        (including the JWT authenticationtoken) for the Dupla API.
+        If token is not present or is expired - first sends a request to the authentication
+        service using mTlS connection and the set certificate to get the JWT authentication token.
+        Then the token is used to authenticate requests to Dupla API until it's expired -
+        then the JWT token is retrieved again.
+
+        Arguments:
+            method (str): HTTP method of the `httpx.Request` object
+            url (str): URL for the new :class:`Request` object.
+            **kwargs (Optional[Dict]): Optional arguments that `httpx.request` takes.
+
+        Returns:
+            httpx.Response: A httpx Response object
+        """
+        if self._client is None:
+            raise DuplaApiUsageException(
+                f"{type(self).__name__} must be used as an async context manager, "
+                "e.g. `async with ... as api:`."
+            )
+
+        await self._ensure_token()
+
+        request_id = uuid4()
+        headers = {
+            "X-Request-ID": str(request_id),
+            "X-Transaktions-ID": self.transaction_id,
+            "UFST-Adgangsgrundlag": f"urn:ufst:adgangsgrundlag:aftale:{self.agreement_id}",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        kwargs.setdefault("timeout", self.timeout)
+
+        return await self._client.request(method, url, headers=headers, **kwargs)
+
+    async def get(
+        self, url: str, params: Optional[Dict] = None, **kwargs: Dict[str, Any]
+    ) -> httpx.Response:
+        """Sends a GET request, handling authentication and API headers.
+
+        Arguments:
+            url (str): URL for the new `httpx.Request` object.
+            params (Optional[Dict]): Dictionary, list of tuples or bytes to send in the
+                query string for the :class:`Request`.
+            **kwargs (Optional[Dict]): Optional arguments that `httpx.request` takes.
+
+        Returns:
+            httpx.Response: A httpx Response object
+        """
+        return await self.request("get", url, params=params, **kwargs)
+
+    async def _ensure_token(self) -> None:
+        """Authenticates if no token is present, or the current one is expired.
+
+        Guarded by a lock so that concurrent callers racing on an expired/missing token
+        don't each trigger their own authentication request - only the first one through
+        authenticates, the rest reuse the token it fetched.
+        """
+        if self._is_token_present() and not self._is_token_expired():
+            return
+        async with self._auth_lock:
+            if self._is_token_present() and not self._is_token_expired():
+                return
+            await self._authenticate()
+
+    async def _authenticate(self) -> None:
+        """Retrieves a JWT token from the authentication service (BAT2) to be used for
+        Dupla API requests. The connection to the authentication service is encrypted with mTLS
+        and the set certificate. To retrieve a JWT token, the payload must include an `x-transaction-id`
+        header and the 3 form fields client_id=api-gateway, scope=openid and grant_type=password
+        The token expiration time is set as well for further checks.
+        """
+        self.token_expiration_time = None
+        self.jwt_token = None
+
+        headers = {"x-transaktion-id": self.transaction_id}
+        payload = {"client_id": "api-gateway", "scope": "openid", "grant_type": "password"}
+
+        async with httpx.AsyncClient(verify=self._ssl_context) as client:
+            result = await client.post(
+                self.billetautomat_url, headers=headers, data=payload, timeout=self.timeout
+            )
+            if result.is_success:
+                result_payload = result.json()
+            else:
+                raise DuplaApiAuthenticationException(
+                    f"JWT error: fetching the token failed, "
+                    f"http code: {result.status_code}, "
+                    f"message: {result.content.decode()}"
+                )
+
+        if access_token := result_payload.get("access_token"):
+            self.jwt_token = access_token
+        else:
+            raise DuplaApiAuthenticationException(
+                "JWT error: access_token not present in response payload"
+            )
+        if expires_in := result_payload.get("expires_in"):
+            self.token_expiration_time = get_utc_now() + timedelta(seconds=expires_in)
+        else:
+            raise DuplaApiAuthenticationException(
+                "JWT error: expires_in not present in response payload"
+            )
+
+    def _is_token_present(self) -> bool:
+        """Checks whether the JWT token was retrieved and the expiration time is set.
+
+        Returns:
+            True if the JWT token and expiration time are set, False otherwise.
+        """
+        return self.jwt_token is not None and self.token_expiration_time is not None
+
+    def _is_token_expired(self) -> bool:
+        """Checks whether the JWT token is expired. To avoid situations where the token is valid
+        for the last second but could be considered as expired in a next request - overlap time
+        is used to consider the token as expired quicker.
+
+        Returns:
+            True if the JWT token is expired, False otherwise.
+        """
+        return get_utc_now() >= self.token_expiration_time - timedelta(
+            seconds=self.jwt_token_expiration_overlap
+        )
