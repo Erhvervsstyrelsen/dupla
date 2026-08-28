@@ -18,13 +18,13 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-  "requests",
-  "requests_pkcs12",
   "python-dotenv",
   "pyyaml",
   "backoff",
   "packaging",  # For version parsing
   "pydantic>=2.1",
+  "httpx>=0.28.1",
+  "httpx-pkcs12>=1.0.3",
 ]
 dynamic = ["version"]
 
