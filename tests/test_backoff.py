@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Union
 
 import backoff
+import httpx
 import pytest
-import requests
 
 from dupla.retry import parse_header_retry_after, stop_retry_on_err
 
@@ -31,7 +31,7 @@ def test_backoff_http_err_handling(params: test_case):
 
     @backoff.on_exception(
         backoff.constant,
-        (requests.exceptions.RequestException),
+        (httpx.HTTPError),
         giveup=lambda e: stop_retry_on_err(e),
         max_tries=2,
         interval=0.01,
@@ -40,7 +40,10 @@ def test_backoff_http_err_handling(params: test_case):
     def simulate_get():
         nonlocal count
         count = count + 1
-        raise requests.exceptions.HTTPError(response=create_response(params.err_code, None))
+        response = create_response(params.err_code, None)
+        raise httpx.HTTPStatusError(
+            "simulated error", request=httpx.Request("GET", "http://test"), response=response
+        )
 
     with pytest.raises(Exception):
         simulate_get()
@@ -69,7 +72,7 @@ def test_backoff_retry_after_header_value(status: int, reply_after: Union[str, f
         max_tries=max_retries,
         jitter=None,
     )
-    def simulate_get() -> requests.Response:
+    def simulate_get() -> httpx.Response:
         nonlocal count
         count = count + 1
         if count < max_retries:
@@ -83,16 +86,14 @@ def test_backoff_retry_after_header_value(status: int, reply_after: Union[str, f
     assert response.status_code == 200
 
 
-@pytest.mark.parametrize(
-    "exec_type", [requests.exceptions.ConnectionError, requests.exceptions.Timeout]
-)
-def test_backoff_retry_network_request_error(exec_type: requests.exceptions.RequestException):
+@pytest.mark.parametrize("exec_type", [httpx.ConnectError, httpx.TimeoutException])
+def test_backoff_retry_network_request_error(exec_type: type[httpx.HTTPError]):
     count = 0
     max_tries = 3
 
     @backoff.on_exception(
         backoff.constant,
-        (requests.exceptions.RequestException),
+        (httpx.HTTPError),
         giveup=lambda e: stop_retry_on_err(e),
         max_tries=max_tries,
         interval=0.01,
@@ -101,7 +102,7 @@ def test_backoff_retry_network_request_error(exec_type: requests.exceptions.Requ
     def simulate_get():
         nonlocal count
         count = count + 1
-        raise exec_type
+        raise exec_type("simulated error")
 
     with pytest.raises(Exception):
         simulate_get()
@@ -125,7 +126,7 @@ def test_stack_exception_outer_predicate_inner_interaction():
 
     @backoff.on_exception(
         backoff.constant,
-        (requests.exceptions.ConnectionError, requests.exceptions.Timeout),
+        (httpx.ConnectError, httpx.TimeoutException),
         max_tries=2,
         interval=0.01,
         jitter=None,
@@ -143,7 +144,7 @@ def test_stack_exception_outer_predicate_inner_interaction():
         count += 1
         kind, val = script.pop(0)
         if kind == "exc":
-            raise requests.exceptions.ConnectionError()
+            raise httpx.ConnectError("simulated error")
         if kind == "resp" and val in (429, 503):
             return create_response(val, retry_after=0.0)
         if kind == "resp" and val == 200:
@@ -156,8 +157,5 @@ def test_stack_exception_outer_predicate_inner_interaction():
 
 
 def create_response(status_code: int, retry_after: Union[float, str, None]):
-    result = requests.Response()
-    result.status_code = status_code
-    if retry_after is not None:
-        result.headers["Retry-After"] = str(retry_after)
-    return result
+    headers = {"Retry-After": str(retry_after)} if retry_after is not None else None
+    return httpx.Response(status_code, headers=headers)

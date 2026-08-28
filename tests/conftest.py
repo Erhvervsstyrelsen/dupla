@@ -1,8 +1,8 @@
 import uuid
 
+import httpx
+import httpx_pkcs12
 import pytest
-import requests
-import requests_pkcs12
 
 from dupla.endpoint import DuplaAccess
 
@@ -14,7 +14,7 @@ class Object:
 def get_jwt_token_response(expiration_time: int):
     response = Object()
     response.status_code = 200
-    response.ok = True
+    response.is_success = True
     response.json = lambda: {
         "access_token": str(uuid.uuid4()),
         "expires_in": expiration_time,
@@ -24,12 +24,17 @@ def get_jwt_token_response(expiration_time: int):
 
 @pytest.fixture
 def session_object():
-    return requests.Session()
+    return httpx.Client()
 
 
 @pytest.fixture
 def mock_session(mocker, session_object):
-    mock_session = mocker.patch.object(requests, "Session", autospec=True)
+    # The mocked httpx.Client() call always returns the same `session_object`, so its
+    # open/closed state tracking must be disabled to allow entering it as a context
+    # manager across multiple calls.
+    mocker.patch.object(httpx.Client, "__enter__", lambda self: self)
+    mocker.patch.object(httpx.Client, "__exit__", lambda self, *args: None)
+    mock_session = mocker.patch.object(httpx, "Client", autospec=True)
     mock_session.return_value = session_object
     return mock_session
 
@@ -50,7 +55,7 @@ def mock_session_request(mocker, session_object):
 
 @pytest.fixture
 def mock_session_pkcs(mocker):
-    mock_pkcs = mocker.patch.object(requests_pkcs12, "Pkcs12Adapter", autospec=True)
+    mock_pkcs = mocker.patch.object(httpx_pkcs12, "create_ssl_context", autospec=True)
     mock_pkcs.return_value = Object()
     return mock_pkcs
 
@@ -81,7 +86,6 @@ def default_mock_requests(
 ):
     """Ensure requests and pkcs is mocked by default.
     Prevents accidentally sending out requests by the API's."""
-    mocker.patch.object(session_object, "mount", autospec=True)
 
 
 @pytest.fixture
