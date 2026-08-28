@@ -1,6 +1,11 @@
 from typing import Any
 
-__all__ = ["DuplaApiAuthenticationException", "DuplaApiException", "InvalidPayloadException"]
+__all__ = [
+    "DuplaApiAuthenticationException",
+    "DuplaApiException",
+    "DuplaApiUsageException",
+    "InvalidPayloadException",
+]
 
 
 class DuplaApiException(Exception):
@@ -17,6 +22,10 @@ class DuplaResponseException(DuplaApiException):
 
 class DuplaApiAuthenticationException(Exception):
     """The authentication to the DUPLA API errored."""
+
+
+class DuplaApiUsageException(DuplaApiException):
+    """The API client was used incorrectly, e.g. outside of its expected lifecycle."""
 
 
 class InvalidPayloadException(Exception):

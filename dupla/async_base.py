@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import ssl
 from datetime import datetime, timedelta
@@ -7,19 +8,25 @@ from uuid import uuid4
 import httpx
 import httpx_pkcs12
 
-from .exceptions import DuplaApiAuthenticationException
+from .exceptions import DuplaApiAuthenticationException, DuplaApiUsageException
 from .timestamp import get_utc_now
 
 __all__ = [
-    "DuplaApiBase",
+    "AsyncDuplaApiBase",
 ]
 
 logger = logging.getLogger(__file__)
 
 
-class DuplaApiBase:
-    """Base class for API acces to the Dataudveklspingsplatformen API (Dupla).
+class AsyncDuplaApiBase:
+    """Async base class for API access to the Dataudveklspingsplatformen API (Dupla).
     Handles authentication and headers for the API requests.
+
+    Must be used as an async context manager, so that the underlying `httpx.AsyncClient`
+    is opened and closed correctly:
+
+        async with AsyncDuplaApiBase(...) as api:
+            await api.get(...)
 
     Arguments:
         transaction_id (str): An ID used to correlate requests across the API.
@@ -65,8 +72,19 @@ class DuplaApiBase:
         self.timeout = timeout
         self.token_expiration_time: Optional[datetime] = None
         self.jwt_token: Optional[str] = None
+        self._auth_lock = asyncio.Lock()
+        self._client: Optional[httpx.AsyncClient] = None
 
-    def request(self, method, url, **kwargs) -> httpx.Response:
+    async def __aenter__(self) -> "AsyncDuplaApiBase":
+        self._client = await httpx.AsyncClient().__aenter__()
+        return self
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        client, self._client = self._client, None
+        if client is not None:
+            await client.__aexit__(*exc_info)
+
+    async def request(self, method, url, **kwargs) -> httpx.Response:
         """Constructs and sends a `httpx.Request` with appropriate headers
         (including the JWT authenticationtoken) for the Dupla API.
         If token is not present or is expired - first sends a request to the authentication
@@ -82,24 +100,26 @@ class DuplaApiBase:
         Returns:
             httpx.Response: A httpx Response object
         """
-        request_id = uuid4()
-        if not self._is_token_present() or self._is_token_expired():
-            self._authenticate()
+        if self._client is None:
+            raise DuplaApiUsageException(
+                f"{type(self).__name__} must be used as an async context manager, "
+                "e.g. `async with ... as api:`."
+            )
 
+        await self._ensure_token()
+
+        request_id = uuid4()
         headers = {
             "X-Request-ID": str(request_id),
             "X-Transaktions-ID": self.transaction_id,
             "UFST-Adgangsgrundlag": f"urn:ufst:adgangsgrundlag:aftale:{self.agreement_id}",
             "Authorization": f"Bearer {self.jwt_token}",
         }
+        kwargs.setdefault("timeout", self.timeout)
 
-        with httpx.Client() as client:
-            client.headers.update(headers)
-            kwargs.setdefault("timeout", self.timeout)
+        return await self._client.request(method, url, headers=headers, **kwargs)
 
-            return client.request(method, url, **kwargs)
-
-    def get(
+    async def get(
         self, url: str, params: Optional[Dict] = None, **kwargs: Dict[str, Any]
     ) -> httpx.Response:
         """Sends a GET request, handling authentication and API headers.
@@ -113,9 +133,23 @@ class DuplaApiBase:
         Returns:
             httpx.Response: A httpx Response object
         """
-        return self.request("get", url, params=params, **kwargs)
+        return await self.request("get", url, params=params, **kwargs)
 
-    def _authenticate(self) -> None:
+    async def _ensure_token(self) -> None:
+        """Authenticates if no token is present, or the current one is expired.
+
+        Guarded by a lock so that concurrent callers racing on an expired/missing token
+        don't each trigger their own authentication request - only the first one through
+        authenticates, the rest reuse the token it fetched.
+        """
+        if self._is_token_present() and not self._is_token_expired():
+            return
+        async with self._auth_lock:
+            if self._is_token_present() and not self._is_token_expired():
+                return
+            await self._authenticate()
+
+    async def _authenticate(self) -> None:
         """Retrieves a JWT token from the authentication service (BAT2) to be used for
         Dupla API requests. The connection to the authentication service is encrypted with mTLS
         and the set certificate. To retrieve a JWT token, the payload must include an `x-transaction-id`
@@ -128,8 +162,8 @@ class DuplaApiBase:
         headers = {"x-transaktion-id": self.transaction_id}
         payload = {"client_id": "api-gateway", "scope": "openid", "grant_type": "password"}
 
-        with httpx.Client(verify=self._ssl_context) as client:
-            result = client.post(
+        async with httpx.AsyncClient(verify=self._ssl_context) as client:
+            result = await client.post(
                 self.billetautomat_url, headers=headers, data=payload, timeout=self.timeout
             )
             if result.is_success:

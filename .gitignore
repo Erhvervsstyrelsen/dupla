@@ -132,3 +132,6 @@ scripts/.env*
 
 # VS code stuff
 .vscode
+
+# UV stuff
+uv.lock
