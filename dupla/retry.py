@@ -1,6 +1,6 @@
 from typing import Any
 
-import requests
+import httpx
 
 
 def stop_retry_on_err(exc: Exception) -> bool:
@@ -14,11 +14,11 @@ def stop_retry_on_err(exc: Exception) -> bool:
         Otherwise True.
     """
     # Network-layer problems → retry
-    if isinstance(exc, (requests.exceptions.ConnectionError, requests.exceptions.Timeout)):
+    if isinstance(exc, (httpx.ConnectError, httpx.TimeoutException)):
         return False
 
     # HTTP errors → inspect status code
-    if isinstance(exc, requests.exceptions.HTTPError) and exc.response is not None:
+    if isinstance(exc, httpx.HTTPStatusError) and exc.response is not None:
         status = exc.response.status_code
         if status >= 500 and status < 600:
             return False  # 5xx server errors

@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import backoff
-import requests
+import httpx
 
 from dupla.retry import parse_header_retry_after, stop_retry_on_err
 
@@ -52,7 +52,7 @@ class DuplaAccess(DuplaApiBase):
             timeout (float): Timeout [s] for HTTP requests. Default: 30s.
                 Please note:
                   - Timeout is packet-to-packet timeout. See
-                    https://requests.readthedocs.io/en/stable/user/quickstart/#timeouts .
+                    https://www.python-httpx.org/advanced/timeouts/ .
                   - Timeout affects the inner loop of retries. So more retries (`max_retries`)
                     the longer total timeout effect.
         """
@@ -99,7 +99,7 @@ class DuplaAccess(DuplaApiBase):
         # Construct the getter with a backoff, and a modified number of max tries
         @backoff.on_exception(
             backoff.expo,
-            (requests.exceptions.RequestException),
+            (httpx.HTTPError),
             giveup=lambda e: stop_retry_on_err(e),
             max_tries=self.max_tries,
         )

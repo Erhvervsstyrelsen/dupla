@@ -1,10 +1,11 @@
 import logging
+import ssl
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
-import requests
-import requests_pkcs12
+import httpx
+import httpx_pkcs12
 
 from .exceptions import DuplaApiAuthenticationException
 from .timestamp import get_utc_now
@@ -33,14 +34,14 @@ class DuplaApiBase:
         timeout (float): Timeout [s] for HTTP requests. Default: 30s.
             Please note:
                 - Timeout is packet-to-packet timeout. See
-                https://requests.readthedocs.io/en/stable/user/quickstart/#timeouts .
+                https://www.python-httpx.org/advanced/timeouts/ .
                 - Timeout affects the inner loop of retries. So more retries (`max_retries`)
                 the longer total timeout effect.
     """
 
     transaction_id: str
     agreement_id: str
-    _pkcs12_adapter: requests_pkcs12.Pkcs12Adapter
+    _ssl_context: ssl.SSLContext
 
     def __init__(
         self,
@@ -55,9 +56,9 @@ class DuplaApiBase:
         self.transaction_id = transaction_id
         self.agreement_id = agreement_id
 
-        self._pkcs12_adapter = requests_pkcs12.Pkcs12Adapter(
-            pkcs12_filename=pkcs12_filename,
-            pkcs12_password=pkcs12_password,
+        self._ssl_context = httpx_pkcs12.create_ssl_context(
+            pkcs12_data=pkcs12_filename,
+            password=pkcs12_password,
         )
         self.billetautomat_url = billetautomat_url
         self.jwt_token_expiration_overlap = jwt_token_expiration_overlap
@@ -65,8 +66,8 @@ class DuplaApiBase:
         self.token_expiration_time: Optional[datetime] = None
         self.jwt_token: Optional[str] = None
 
-    def request(self, method, url, **kwargs) -> requests.Response:
-        """Constructs and sends a `requests.Request` with appropriate headers
+    def request(self, method, url, **kwargs) -> httpx.Response:
+        """Constructs and sends a `httpx.Request` with appropriate headers
         (including the JWT authenticationtoken) for the Dupla API.
         If token is not present or is expired - first sends a request to the authentication
         service using mTlS connection and the set certificate to get the JWT authentication token.
@@ -74,12 +75,12 @@ class DuplaApiBase:
         then the JWT token is retrieved again.
 
         Arguments:
-            method (str): HTTP method of the `requests.Request` object
+            method (str): HTTP method of the `httpx.Request` object
             url (str): URL for the new :class:`Request` object.
-            **kwargs (Optional[Dict]): Optional arguments that `requests.request` takes.
+            **kwargs (Optional[Dict]): Optional arguments that `httpx.request` takes.
 
         Returns:
-            requests.Reponse: A requests Response opject
+            httpx.Response: A httpx Response object
         """
         request_id = uuid4()
         if not self._is_token_present() or self._is_token_expired():
@@ -92,25 +93,25 @@ class DuplaApiBase:
             "Authorization": f"Bearer {self.jwt_token}",
         }
 
-        with requests.Session() as session:
-            session.headers.update(headers)
+        with httpx.Client() as client:
+            client.headers.update(headers)
             kwargs.setdefault("timeout", self.timeout)
 
-            return session.request(method, url, **kwargs)
+            return client.request(method, url, **kwargs)
 
     def get(
         self, url: str, params: Optional[Dict] = None, **kwargs: Dict[str, Any]
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Sends a GET request, handling authentication and API headers.
 
         Arguments:
-            url (str): URL for the new `requests.Request` object.
+            url (str): URL for the new `httpx.Request` object.
             params (Optional[Dict]): Dictionary, list of tuples or bytes to send in the
                 query string for the :class:`Request`.
-            **kwargs (Optional[Dict]): Optional arguments that `requests.request` takes.
+            **kwargs (Optional[Dict]): Optional arguments that `httpx.request` takes.
 
         Returns:
-            requests.Reponse: A requests Response opject
+            httpx.Response: A httpx Response object
         """
         return self.request("get", url, params=params, **kwargs)
 
@@ -127,12 +128,11 @@ class DuplaApiBase:
         headers = {"x-transaktion-id": self.transaction_id}
         payload = {"client_id": "api-gateway", "scope": "openid", "grant_type": "password"}
 
-        with requests.Session() as session:
-            session.mount(self.billetautomat_url, self._pkcs12_adapter)
-            result = session.post(
+        with httpx.Client(verify=self._ssl_context) as client:
+            result = client.post(
                 self.billetautomat_url, headers=headers, data=payload, timeout=self.timeout
             )
-            if result.ok:
+            if result.is_success:
                 result_payload = result.json()
             else:
                 raise DuplaApiAuthenticationException(
